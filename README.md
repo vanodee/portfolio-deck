@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Card Table Portfolio
 
-## Getting Started
+An interactive portfolio presented as a top-down view of a card table. Each project is a physical playing card — face-down until revealed, shufflable, and clickable to flip and scale up into a scrollable reading view of the project detail.
 
-First, run the development server:
+This is the **Phase 1 prototype**: a standalone build with mock/hardcoded content, focused on proving out the visual and interaction design before any CMS is wired in. Sanity CMS integration and full portfolio replacement are a deferred later phase — the intended swap point is `data/projects.ts`.
+
+## Highlights
+
+- **Onboarding gate** — cards spawn shuffling at a deck position; the visitor taps in before anything else animates or becomes interactive.
+- **Deal / idle / shuffle** — cards deal into a grid with dealer-style stagger, bob gently at rest, and can be reshuffled with a physically plausible reposition animation.
+- **Cover / reveal** — a global toggle flips the whole table between face-down and face-up in one action.
+- **Open / close** — clicking a card flips it (if covered), gathers the rest of the deck behind it, then scales it up into a scrollable reading view; closing reverses the sequence.
+- **Hover "tell"** — lingering on a covered card triggers a partial peek flip, like a poker tell.
+- **About route** — a dedicated `/about` page with its own dock-formation route transition, reusing the same shared-element choreography as the table.
+- **Responsive** — below a breakpoint, the free-form table collapses to a static 3-column grid with the same interactions.
+
+See `card-table-portfolio-prd.md` for the full feature spec and `card-table-portfolio-design-system.md` for exact tokens, timings, easings, and dimensions.
+
+## Tech stack
+
+- [Next.js](https://nextjs.org) (App Router)
+- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) / [three.js](https://threejs.org) for the WebGL card table
+- [@react-spring/three](https://react-spring.dev) for canvas motion, [Framer Motion](https://www.framer.com/motion) for DOM overlays
+- [Zustand](https://zustand-demo.pmnd.rs) for shared table state
+- CSS Modules + `app/tokens.css` (no Tailwind)
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other commands:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint    # ESLint
+npm run build   # production build (also runs the type check)
+```
 
-## Learn More
+### Visual verification
 
-To learn more about Next.js, take a look at the following resources:
+WebGL doesn't render in a hidden/backgrounded browser tab (requestAnimationFrame is throttled to zero), so prefer headless screenshots over manually driving a browser:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+node scripts/snap.mjs <outDir> <step> [--mobile]
+# steps: load-sequence, hover, reveal, shuffle, open, close
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
 
-## Deploy on Vercel
+- `app/` — Next.js routes (`/` table, `/about`)
+- `components/canvas/` — R3F scene: cards, table, click handling
+- `components/dom/` — DOM/overlay UI (control dock, header, open-card overlay, About page sections)
+- `lib/` — shared layout math, motion tokens, easing curves, card texture compositing, multi-card choreography
+- `store/` — Zustand store for table/card interaction state
+- `data/` — mock content (`projects.ts` is the Phase 2 CMS swap point)
+- `scripts/snap.mjs` — Playwright screenshot harness for visual verification
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Phase 1 prototype — mock data, no CMS, no routing from an existing portfolio site. See `CHECKLIST.md` for outstanding items and the PRD's open-questions section (§10) for unresolved design decisions.

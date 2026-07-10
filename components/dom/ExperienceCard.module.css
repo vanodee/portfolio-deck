@@ -1,0 +1,90 @@
+/* Experience Card (About Experience section) — same shell/corner-mark
+   treatment as PhotoCard.module.css (DS §3.10 deviation from the
+   8px-padding / single-watermark Card Front spec, §3.2), but text is
+   vertically centered in a bordered inner box rather than bottom-anchored,
+   per Figma node 54:2197. */
+
+.card {
+  position: relative;
+  width: 214px;
+  height: 300px;
+  padding: 24px;
+  background-color: var(--card-front-bg);
+  border-radius: 4px;
+  box-shadow: var(--shadow-rest);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.cornerMarkTL,
+.cornerMarkBR {
+  position: absolute;
+  pointer-events: none;
+}
+
+.cornerMarkTL {
+  top: 6px;
+  left: 6px;
+  width: 17.38px;
+  height: 16px;
+}
+
+.cornerMarkBR {
+  right: 7px;
+  bottom: 8px;
+  width: 17px;
+  height: 16px;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dateRange {
+  font-family: var(--font-ui);
+  font-size: 6px;
+  font-weight: 300;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--card-front-text);
+  text-align: center;
+  width: 100%;
+  margin: 0;
+}
+
+.title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--card-front-text);
+  text-align: center;
+  width: 100%;
+  margin: 0;
+}
+
+.company {
+  font-family: var(--font-ui);
+  font-size: 8px;
+  font-weight: 400;
+  color: var(--card-front-text);
+  text-align: center;
+  width: 100%;
+  margin: 0;
+}

@@ -1,0 +1,255 @@
+/* About page's frame-interior scroll region — a single plain overflow-y:auto
+   flex child. Deliberately NOT PlayArea's eased-scroll + draggable-rail
+   system (SCROLL_EASE/scrollYRef): that machinery exists to stay in sync
+   with the WebGL canvas, which never renders on this route (DS §4.3 already
+   scopes the custom rail to Home only). */
+.scrollRegion {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.scrollRegion::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollRegion::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 96px;
+  padding: 96px 48px 140px;
+  /* Bottom padding reserves clearance above AboutDock (fixed, bottom:20px,
+     ~61px pill) so "Ready to deal?" never sits under it. */
+}
+
+/* Shared section-heading recipes — DS §2.1 (Meow Script, table-level
+   decorative only). Sizes are new to this page: the only prior precedent
+   (PickACardHeading.module.css) is a 96px table-surface watermark, too large
+   for a content section heading. Not yet in the design system doc — flagged
+   for a follow-up sync-specs pass. */
+.heroHeading {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(40px, 6vw, 72px);
+  color: var(--tagline-color);
+  line-height: 1;
+  margin: 0;
+}
+
+.sectionHeading {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(32px, 4.5vw, 56px);
+  color: var(--tagline-color);
+  line-height: 1;
+  margin: 0;
+}
+
+/* Scaled-up variant of TableHeader.module.css's .tagline recipe (10-12px /
+   300 / 0.1em) — reads as a section label here, not a fixed micro-tag. */
+.subheading {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--tagline-color);
+  opacity: 0.65;
+  margin: 8px 0 0;
+}
+
+/* ---- Hero ---- */
+
+.hero {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 850px;
+  align-items: center;
+  gap: 48px;
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.heroIntro {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--body-text-color);
+  max-width: 480px;
+  margin: 0;
+}
+
+.statChips {
+  display: flex;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.heroPhotos {
+  justify-self: center;
+}
+
+/* ---- The Run ---- */
+
+.run {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.runSpreadWrap {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* ---- House Rules ---- */
+
+.houseRules {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.houseRulesBody {
+  margin-top: 32px;
+  max-width: 600px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bodyParagraph {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--body-text-color);
+  margin: 0;
+}
+
+/* ---- Chips up my sleeve ---- */
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.toolGrid {
+  margin-top: 40px;
+  /* Explicit width (not just max-width): this is a flex child of .tools,
+     which centers its children (align-items:center) rather than stretching
+     them — without a definite width here, the row-wrap below has no fixed
+     box to wrap against and just grows to fit its content. */
+  width: 100%;
+  display: flex;
+  /* Flex, not CSS Grid — grid's auto-fit tracks left-align items in an
+     incomplete final row (each item pinned to its own fixed column slot);
+     flex-wrap centers each row's content independently, incomplete rows
+     included, since justify-content applies per line, not per fixed track. */
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 32px;
+  row-gap: 40px;
+  max-width: 640px;
+}
+
+/* ---- Tables I've Played ---- */
+
+.brands {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.brandGrid {
+  margin-top: 40px;
+  /* Explicit width, same reason as .toolGrid above. */
+  width: 100%;
+  display: flex;
+  /* Flex, not CSS Grid — same reasoning as .toolGrid: keeps an incomplete
+     final row of BrandCards centered as a group instead of left-aligned in
+     grid's fixed column tracks. max-width still caps this at 4 columns
+     wide; flex-wrap reflows to 3/2/1 as the frame narrows. */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  max-width: 992px;
+}
+
+/* ---- Ready to deal ---- */
+
+.readyToDeal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .content {
+    gap: 64px;
+    padding: 48px 20px 120px; /* AboutDock sits at bottom:12px on mobile */
+  }
+
+  .hero {
+    text-align: center;
+    flex-direction: column-reverse;
+  }
+
+  .heroText {
+    align-items: center;
+  }
+
+  .heroIntro {
+    max-width: 100%;
+  }
+
+  .statChips {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .heroPhotos {
+    margin-top: 16px;
+  }
+
+  .runSpreadWrap {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 8px; /* clearance for a visible scrollbar */
+  }
+
+  .toolGrid {
+    column-gap: 20px;
+    row-gap: 32px;
+    max-width: 100%;
+  }
+
+  .brandGrid {
+    gap: 16px;
+  }
+}

@@ -1,0 +1,14 @@
+.button {
+  position: absolute;
+  background: none;
+  border: none;
+  padding: 0;
+  /* Pointer input goes to the canvas; these exist for keyboard/AT users. */
+  pointer-events: none;
+  border-radius: 6px;
+}
+
+.button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 4px;
+}

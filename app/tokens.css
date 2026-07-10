@@ -1,0 +1,62 @@
+/* Design tokens — card-table-portfolio-design-system.md (Draft v1). */
+
+:root {
+  /* §1.1 Table surface */
+  --table-center: #186245;
+  --table-edge: #030f0a;
+
+  /* §1.2 Card back */
+  --card-back-bg: #130a5d;
+  --card-back-border: #ffffff;
+
+  /* §1.3 Card front */
+  --card-front-bg: #ffffff;
+  --card-front-text: #1c1c1c;
+
+  /* §1.4 Control dock */
+  --dock-fill: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(8, 24, 18, 0.42) 45%,
+    rgba(3, 15, 10, 0.58) 100%
+  );
+
+  --dock-border: rgba(255, 255, 255, 0.32);
+  --dock-shadow: 0px 16px 32px rgba(3, 15, 10, 0.45);
+  --dock-blur: blur(16px) saturate(1.6);
+  --dock-button-border: rgba(255, 255, 255, 0.3);
+  --dock-button-fill: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 15%,
+    rgba(255, 255, 255, 0.3) 85%
+  );
+  --dock-button-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+  --dock-button-blur: blur(20px) saturate(1.4);
+  --dock-icon: #ffffff;
+
+  /* §1.5 Table typography */
+  --heading-color: rgba(255, 255, 255, 0.2);
+  --tagline-color: #ffffff;
+
+  /* §1.7 Flagship */
+  --flagship-gold: #b8860b;
+
+  /* §5 Elevation — shadow color derived from table-edge. --shadow-hover
+     mirrors lib/colors.ts's ELEVATION.hover row (canvas cards' hover
+     elevation), extended here as this system's first DOM/CSS consumer. */
+  --shadow-rest: 4px 8px 8px rgba(3, 15, 10, 0.35);
+  --shadow-hover: 8px 20px 20px rgba(3, 15, 10, 0.4);
+  --shadow-opened: 0px 24px 40px rgba(3, 15, 10, 0.5);
+
+  /* §2 Typography */
+  --font-ui: var(--font-outfit), sans-serif;
+  --font-script: var(--font-meow-script), cursive;
+
+  /* About page body copy (Hero intro, House Rules paragraphs) — no on-felt
+     body-copy token existed yet, only heading/label tokens (§1.5). Not yet
+     in the design system doc; flagged for a sync-specs pass. */
+  --body-text-color: rgba(255, 255, 255, 0.72);
+}

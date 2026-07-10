@@ -1,0 +1,48 @@
+.tracker {
+  position: fixed;
+  right: 28px;
+  bottom: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+/* Poker-chip stack: three offset ellipses */
+.chips {
+  position: relative;
+  width: 26px;
+  height: 20px;
+}
+
+.chip {
+  position: absolute;
+  left: 0;
+  width: 26px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chip:nth-child(1) {
+  bottom: 0;
+}
+.chip:nth-child(2) {
+  bottom: 5px;
+}
+.chip:nth-child(3) {
+  bottom: 10px;
+}
+
+@media (max-width: 767px) {
+  .tracker {
+    right: 14px;
+    bottom: 16px;
+  }
+}

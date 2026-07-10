@@ -1,0 +1,58 @@
+.card {
+  position: relative;
+  width: 230px;
+  height: 150px;
+  padding: 1rem;
+  border: 1px solid var(--flagship-gold);
+  background-color: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background-color 220ms ease-out;
+}
+
+.card.revealed {
+  background-color: #fff;
+}
+
+.card:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 4px;
+}
+
+.name,
+.logo {
+  position: absolute;
+  /* .card's own padding is inert for absolutely-positioned children (their
+     containing block is the padding box), so the 1rem inset is repeated
+     here to actually produce the padded content area. Expressed as explicit
+     top/left + calc width/height rather than the `inset: 1rem` shorthand:
+     with all four sides set and width auto, non-replaced elements (.name's
+     span) stretch to fill, but replaced elements (.logo's img) instead size
+     to their intrinsic dimensions and ignore the implied stretch — pinning
+     the logo in the top-left corner instead of centering it. Explicit
+     width/height behaves identically for both element types. */
+  top: 1rem;
+  left: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.name {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.5em;
+  line-height: 1.4;
+  color: #fff;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.logo {
+  object-fit: contain;
+}

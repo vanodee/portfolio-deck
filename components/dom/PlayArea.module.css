@@ -1,0 +1,119 @@
+/* Outer positioning wrapper — deliberately NOT using transform:translateX
+   for centering (a transform on an ancestor would make it the containing
+   block for position:fixed descendants, which would wrongly size the
+   full-viewport canvas to this box instead of the true viewport). Flex
+   centering avoids that entirely. */
+.viewport {
+  position: fixed;
+  top: 56px;
+  /* Stops flush at the viewport bottom — doesn't bleed past it. */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* DS §4.3 — permanent tablecloth/play-area edge, and the real content
+   container: cards + heading live inside it, with card overflow scrolling
+   natively within its bounds. */
+.frame {
+  position: relative;
+  width: min(1200px, 100% - 192px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Alpha channel only, driven by PlayArea.tsx via --frame-border-alpha
+     (0 during onboarding, fades to 0.35 once the deck is clicked) — border
+     style/width/geometry never change, so the scroll-boundary box this
+     frame also serves as stays undisturbed. */
+  border: 1px dashed rgba(255, 255, 255, var(--frame-border-alpha, 0.35));
+  border-bottom: none;
+  border-radius: 2px;
+  pointer-events: auto;
+  /* transition-duration set inline by PlayArea.tsx from MOTION.onboarding.borderFadeIn */
+  transition-property: border-color;
+  transition-timing-function: ease;
+}
+
+/* Holds both the (invisible-scrollbar) content proxy and the visible
+   scrollbar rail, so the rail stays pinned to this box's edge instead of
+   scrolling away with the proxy's own content. */
+.scrollportWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.scrollProxy {
+  /* Above the canvas (z-index 0 in TableCanvas.tsx) so the a11y buttons'
+     focus-visible outline is never painted over by a scrolled-up card;
+     below the heading (z-index 2), which stays pinned in front of both.
+     pointer-events:none on the container itself (its buttons already set
+     this individually) lets mouse/touch pass straight through to the
+     canvas beneath for card hover/click — scrolling is wheel/touch-drag
+     forwarded from the canvas (see TableCanvas.tsx) or dragged directly
+     via .scrollbarRail below; native keyboard scroll still works via
+     focus, since focus isn't a pointer event. Its own native scrollbar is
+     hidden — .scrollbarRail is the only visible/draggable one. */
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+.scrollProxy::-webkit-scrollbar {
+  display: none;
+}
+
+/* The real, draggable scrollbar — a narrow strip pinned to the frame's
+   right edge. It sits entirely within the grid's guaranteed side margin
+   (DESKTOP.outerPadX / MOBILE.outerPad in lib/layout.ts always reserve at
+   least that much clearance), so it never overlaps a card and can safely
+   stay pointer-events:auto without blocking card clicks elsewhere. */
+.scrollbarRail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  /* Stays within the grid's guaranteed side margin at every breakpoint —
+     mobile's margin (MOBILE.outerPad, lib/layout.ts) is the tightest at
+     16px, so keep a little clearance under that. */
+  width: 14px;
+  z-index: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent; /* Firefox */
+}
+
+.scrollbarRail::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbarRail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbarRail::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.scrollbarRail::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 767px) {
+  .viewport {
+    top: 48px;
+  }
+  .frame {
+    width: calc(100% - 24px);
+  }
+}

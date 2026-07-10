@@ -1,0 +1,43 @@
+/* Standalone wordmark mark (DS §3.5) — fixed above the WebGL canvas on
+   both Home (OnboardingScreen) and About (dock-nav transition), at the
+   exact same viewport position/size on each so the shared-element handoff
+   reads as seamless across an actual route change (no DOM node persists
+   across it — see lib/dockChoreography.ts / hooks/useDockNavFormation.ts).
+   Pointer-events:none so clicks always fall through to whatever's
+   underneath (the deck's own click target on Home, nothing on About). */
+.logoLayer {
+  position: fixed;
+  bottom: 14vh;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.logoWrap {
+  width: 90px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+@media (max-width: 767px) {
+  .logoLayer {
+    bottom: 10vh;
+  }
+  .logoWrap {
+    width: 64px;
+    height: 60px;
+  }
+}

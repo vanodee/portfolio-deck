@@ -1,0 +1,84 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(3, 15, 10, 0.25);
+}
+
+.pane {
+  position: fixed;
+  z-index: 21;
+  left: 50%;
+  background: var(--card-front-bg);
+  color: var(--card-front-text);
+  border-radius: 8px 8px 0 0;
+  box-shadow: var(--shadow-opened);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.close {
+  position: sticky;
+  top: 16px;
+  margin-left: auto;
+  margin-right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(28, 28, 28, 0.08);
+  color: #1c1c1c;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.close:hover {
+  background: rgba(28, 28, 28, 0.16);
+}
+
+.art {
+  width: 100%;
+  display: block;
+  margin-top: -52px; /* sits behind the sticky close button */
+}
+
+.content {
+  padding: 28px 40px 64px;
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.meta {
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 28px;
+}
+
+.body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.body p + p {
+  margin-top: 1em;
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding: 20px 20px 48px;
+  }
+  .title {
+    font-size: 26px;
+  }
+}

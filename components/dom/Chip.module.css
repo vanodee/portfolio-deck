@@ -1,0 +1,160 @@
+/* Poker chip: chip-structure (bottom, color-driven SVG) + content (middle,
+   per-variant) + light/gloss (top, fixed SVG). Structure/light geometry and
+   filters are transcribed verbatim from the Figma-exported reference SVGs
+   (public/assets/referneces/stat.svg, tool.svg) in Chip.tsx — this file only
+   handles layout/positioning, not the chip's own shape/shading.
+
+   Sizing: the SVG's native aspect ratio (200x202, from the reference) is
+   preserved at every scale via --chip-w/--chip-h; per-variant content sizes
+   (font, image, hover-label) below are scaled from the same 200px baseline
+   this component was originally built against. */
+
+.chipWrapperStat,
+.chipWrapperTool {
+  position: relative;
+}
+
+.chipWrapperStat {
+  --chip-w: 130px;
+  --chip-h: 131.5px;
+  width: var(--chip-w);
+  height: var(--chip-h);
+}
+
+.chipWrapperTool {
+  --chip-w: 100px;
+  --chip-h: 101px;
+  --chip-gap: 6px;
+  --chip-label-h: 20px;
+  width: var(--chip-w);
+  /* Reserves chip + gap + label slot at rest, so the hover-lift never
+     reflows sibling chips and the label has a stable landing spot. */
+  height: calc(var(--chip-h) + var(--chip-gap) + var(--chip-label-h));
+}
+
+.chip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--chip-w);
+  height: var(--chip-h);
+  /* Resting-on-the-table shadow, both variants; follows the SVG's actual
+     circular silhouette (a box-shadow would draw a rectangle instead). */
+  filter: drop-shadow(var(--shadow-rest));
+}
+
+.chipStructure {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.chipContent {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.chipWrapperStat .chipContent {
+  max-width: 90px;
+}
+
+.chipWrapperTool .chipContent {
+  max-width: 60px;
+}
+
+.statValue {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1;
+  color: #fff;
+}
+
+.statLabel {
+  margin-top: 3px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+}
+
+.toolLogo {
+  width: 30px;
+  height: 30px;
+  border-radius: 2.5px;
+  object-fit: contain;
+  display: block;
+  /* Reference logos (e.g. Webflow) carry their own colored badge baked
+     into the asset; a plain-white placeholder icon needs this to read
+     against a light chip color. Harmless no-op tint for full-color logos. */
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.chipLight {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.chipLabel {
+  position: absolute;
+  top: calc(var(--chip-h) + var(--chip-gap));
+  left: 50%;
+  max-width: 96px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--card-front-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translate(-50%, -6px);
+  pointer-events: none;
+  /* Leaving-hover timing (MOTION.hover.out = 320ms, ease-in-out). */
+  transition: opacity 320ms ease-in-out, transform 320ms ease-in-out;
+}
+
+.chipWrapperTool .chip {
+  /* Leaving-hover timing (MOTION.hover.out = 320ms, ease-in-out); filter
+     eases the table shadow back to resting alongside the lift. */
+  transition: transform 320ms ease-in-out, filter 320ms ease-in-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* Hover is bound to the wrapper, not the chip itself — once the chip
+     lifts, the cursor sitting in the revealed gap over the label must stay
+     inside the hover hit-box or the state flickers off. */
+  .chipWrapperTool:hover .chip {
+    transform: translateY(-14px) scale(1.03);
+    /* Bigger, softer shadow simulates the chip rising off the table. */
+    filter: drop-shadow(var(--shadow-hover));
+    /* Entering-hover timing (MOTION.hover.in = 220ms, ease-out). */
+    transition: transform 220ms ease-out, filter 220ms ease-out;
+  }
+
+  .chipWrapperTool:hover .chipLabel {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    transition: opacity 220ms ease-out, transform 220ms ease-out;
+  }
+}

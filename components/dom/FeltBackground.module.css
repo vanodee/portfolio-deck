@@ -1,0 +1,11 @@
+.felt {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  /* DS §1.1 — radial gradient anchored at mid-top */
+  background: radial-gradient(
+    120% 120% at 50% 20%,
+    var(--table-center) 0%,
+    var(--table-edge) 100%
+  );
+}

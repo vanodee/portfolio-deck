@@ -1,0 +1,185 @@
+// Design System §6 motion tokens — single source of truth for every
+// duration/stagger in the app. All values in milliseconds.
+
+export const MOTION = {
+  idleBob: {
+    periodMin: 3200,
+    periodMax: 4200, // randomized per card, deliberately desynced
+    liftPx: 6, // vertical travel at bob peak (rest → bobPeak elevation row)
+    scalePulse: 0.008,
+  },
+
+  hover: {
+    in: 220, // ease-out — snappy response in
+    out: 320, // ease-in-out — softer settle out
+    liftPx: 14,
+    scale: 1.03,
+  },
+
+  peek: {
+    holdThreshold: 600, // hover hold before the "tell" triggers
+    in: 380, // ease-out
+    out: 280, // ease-in
+    angleRad: 0.3, // partial flip — a few degrees, not 180°
+  },
+
+  flip: 500, // flipEase (overshoot)
+
+  scaleOpen: 550, // openEase
+  close: 400, // ease-in — quicker than open
+
+  overlay: {
+    fadeIn: 200,
+    fadeOut: 180,
+  },
+
+  shuffle: {
+    lift: 150,
+    travelMin: 500,
+    travelMax: 650, // scaled by travel distance
+    staggerMin: 50,
+    staggerMax: 80,
+    liftPx: 26,
+  },
+
+  deal: {
+    jitter: 500, // deck riffle before dealing (400–600ms window)
+    perCard: 450, // expo-out
+    stagger: 75, // 60–90ms window
+  },
+
+  // Open-reveal gather/scatter stages reuse deal's perCard/stagger/expo-out
+  // for travel timing — these are just the fan-stack geometry constants.
+  gather: {
+    fanStepPx: 10, // lateral peek offset per stacked rank, alternating sides
+    fanAngleStepRad: 0.05, // ~3° in-plane tilt per stacked rank
+    fanMaxRank: 4, // caps fan spread so a larger deck doesn't splay too wide
+    stackZBase: -2, // first-gathered card's z depth under the open card
+    stackZStep: 0.15, // additional depth per rank further back in the stack
+  },
+
+  bulkReveal: {
+    stagger: 50, // 40–60ms window, reuses flip timing
+  },
+
+  // About page — Photo Card spread (Hero section). NOT part of DS §3's
+  // documented card-front spec yet; new, About-page-specific geometry, and
+  // NOT a reuse/edit of `gather` above (that block is WebGL open-card 3D
+  // stack choreography, tuned for a different purpose — see PRD §4.5).
+  // Click-anywhere-on-spread cycles which card is frontmost (round-robin);
+  // each card's peek offset is driven by its rank relative to the front card.
+  photoSpread: {
+    offsetXStepPx: 34, // lateral peek offset per stacked rank
+    offsetYStepPx: 22, // vertical peek offset per stacked rank
+    rotationStepDeg: 7, // in-plane tilt per stacked rank, at rest
+    hoverRotationStepDeg: 14, // in-plane tilt per stacked rank, spread hovered (mouse only)
+    // The front (rank 0) card sits outside the rank*step formula above (it's
+    // always the pivot, 0deg at rest) — without its own hover reaction it
+    // reads as dead/static next to the fanning cards behind it. Tilts the
+    // opposite way from the back cards' positive rotation so the whole
+    // spread reads as pivoting apart from a shared center, not just the back
+    // cards sliding out from under an inert top card.
+    frontHoverRotationDeg: -6,
+    cycleDuration: 380, // ms — rank-swap transition on click, also drives the hover-rotation tween
+  },
+
+  // About page — Experience Card spread (Experience section). Also NOT a
+  // reuse/edit of `gather` — this fan is static (no interaction) and its
+  // horizontal step is sized specifically so every card's centered text
+  // block stays fully unobstructed at any rank, unlike `gather`'s tighter
+  // peeking-stack overlap.
+  experienceFan: {
+    // Must be ≥ the text block's right edge offset from the card's own
+    // left edge (24px outer padding + 8px text-block padding + 150px text
+    // width ≈ 182px) — otherwise a higher-z-index neighbor to the right
+    // covers the tail of this card's text, violating the "text always
+    // unobstructed" requirement. 190px gives an 8px clearance margin.
+    xStepPx: 190,
+    rotationStepDeg: 7, // rotation per step away from center
+    liftPx: 26, // vertical drop per step away from center (bow shape)
+  },
+
+  // Ambient "dealer's choice" glow (PRD §4.7 / DS §1.7) — always-on soft
+  // pulse around the flagship card, independent of hover/face state.
+  flagshipGlow: {
+    period: 2800, // one breathe cycle, sine in-out
+    minOpacity: 0.10,
+    maxOpacity: 0.3,
+  },
+
+  // Onboarding-only "overhand shuffle" loop (Card.tsx onboardingShuffleStart)
+  // — X-axis only (no Y/Z/rotation): a clean, repeating merge <-> cut cycle,
+  // scoped entirely to the pre-click onboarding screen. Not part of the
+  // design system yet — placeholder values pending user tuning.
+  onboardingShuffle: {
+    cutOffsetX: 90, // px each pile shifts left/right of center when cut apart
+    fanAmpX: 15, // stable per-card X fan within a pile, ± this many px
+    cutDuration: 190, // ms — merged<->cut transition, either direction
+    holdMerged: 130, // ms — hold fully merged before cutting
+    holdCut: 160, // ms — hold cut apart before recombining
+    loopStagger: 10, // ms — per-card initial phase offset (stackIndex * loopStagger)
+    ascendDuration: 800, // ms — slow rise from shuffle rest position to deck.y, pre-deal
+  },
+
+  // Onboarding -> table handoff choreography (border fade-in, logo travel,
+  // dock formation, header/heading reveal). Also pending design-system sync.
+  // Dual-purposed: lib/dockChoreography.ts also replays logoTravel/
+  // dockCrossfade/dockFormation in reverse-then-forward for the Home <->
+  // About dock route transition.
+  onboarding: {
+    helloFadeOut: 180, // "Hello!" + subheading fade on deck click
+    logoTravel: 900, // standalone logo's translate+scale travel to the dock position
+    dockCrossfade: 220, // logo <-> dock opacity swap, once the logo arrives
+    dockFormation: 1400, // pill extend + button reveal, after the crossfade
+    // Rest-state clip is an ellipse, not a circle — a circle inscribed in
+    // the center logo's box clips its corners; an ellipse can be sized to
+    // clear a rectangular logo cleanly while still reading as a small pill.
+    dockRestRx: 42, // px, rest-state ellipse half-width (clears the logo's corners)
+    dockRestRy: 28, // px, rest-state ellipse half-height
+    dockFormedRadius: 280, // px, fully-formed ellipse radius (both axes) — covers the whole pill
+    dockButtonStagger: 90, // per-button reveal stagger within each group
+    dockButtonOffsetX: 20, // px, buttons start shifted toward dock center
+    borderFadeIn: 700, // dashed play-area border alpha fade-in
+    headerFadeIn: 850, // header fade+translate-in, post deal-complete
+    headerTranslateX: 40, // px, "from the left" starting offset
+    // "Pick a Card" waits for the header's fade+translate to fully finish
+    // (PickACardHeading.tsx delays by headerFadeIn + this gap, not just this
+    // gap alone), then adds this small extra beat before starting itself.
+    headingDelayAfterHeader: 80,
+    headingFadeIn: 700,
+    pickACardTranslateY: 20, // px — downward-entrance offset for "Pick a Card"
+
+    // Page-load entrance + click-exit for "Hello!"/subheading/cards — the
+    // rest of this block is the CLICK->table handoff, this part is the
+    // initial load-in that precedes it.
+    helloEnterTranslateVh: 32, // vh — "Hello!"'s on-load starting offset (scales with viewport height)
+    helloEnterDuration: 1000, // ms — "Hello!" translate-into-place duration on load
+    helloExitTranslateY: 24, // px — additional upward translate during click-exit
+    cardsFadeInDelay: 0, // ms — cards start fading in shortly after Hello begins moving
+    cardsFadeInDuration: 0, // ms — card opacity 0->1 fade duration
+    // Subheading waits for BOTH Hello's translate and the cards' fade-in to
+    // finish (computed as Math.max of the two, plus this gap) — see
+    // OnboardingScreen.tsx, same "derive from the other side's duration"
+    // pattern as headingDelayAfterHeader above.
+    subheadingDelayGap: 120,
+    subheadingFadeIn: 500, // ms — subheading's own fade-in duration
+  },
+
+  // Home <-> About route-nav table-exit — the deck + "Pick a Card" heading
+  // sliding out/in, distinct from (but triggered alongside) the dock's own
+  // formation choreography above (lib/dockChoreography.ts). TableHeader and
+  // PlayArea persist across the route change (app/layout.tsx); this is what
+  // animates their contents rather than having them just vanish/reappear.
+  // Placeholder values, same pending-tuning caveat as onboarding.
+  tableNav: {
+    // px — must clear the play area's max width (DS §4.1, min(1200px, ...))
+    // from any column's content-local position, or cards only partially
+    // slide out of frame instead of fully exiting (verified via live
+    // browser testing: 500px left a couple of columns still peeking in).
+    cardTranslateX: 1200,
+    cardDuration: 450, // ms per card (reuses deal.perCard's magnitude)
+    cardStagger: 40, // ms between cards
+    headingTranslateY: 60, // px, upward exit distance
+    headingDuration: 500, // ms
+  },
+} as const;

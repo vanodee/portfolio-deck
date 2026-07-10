@@ -1,0 +1,61 @@
+/* Onboarding-only pre-table gate text layer. This sits BEHIND the WebGL
+   canvas (TableCanvas.tsx, z-index: 0) but ABOVE FeltBackground's opaque
+   background. z-index:-1 alone isn't enough here: unlike PickACardHeading
+   (nested inside PlayArea's .viewport, which itself is z-index:1 — so its
+   LOCAL -1 still lands above the page-root felt background), this
+   component is a direct sibling of FeltBackground at the <main> root. A
+   -1 there sinks it below FeltBackground's opaque radial-gradient div
+   entirely (auto/0-level, but positioned — negative z-index paints
+   behind any auto/0-level positioned sibling regardless of DOM order),
+   making the text literally invisible. z-index:0 keeps it tied with (and,
+   via DOM order, painted after/above) FeltBackground, while still
+   comfortably below .viewport's explicit z-index:1 so cards can occlude
+   it exactly like "Pick a Card" is occluded elsewhere. pointer-events:none
+   so clicks always fall through to the deck's own R3F click target
+   (DeckClickCatcher.tsx). The standalone logo mark (the layoutId shared-
+   element source) lives in StandaloneLogo.tsx/.module.css — shared with
+   the Home <-> About dock-nav transition. */
+.textLayer {
+  position: fixed;
+  top: 62px;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Same dim watermark treatment as PickACardHeading (DS §2.1). */
+.hello {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(48px, 8vw, 96px);
+  color: var(--tagline-color);
+  opacity: 0.5;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Same recipe as TableHeader's .tagline (DS §1.5 / §2.2). */
+.subheading {
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: var(--tagline-color);
+  /* opacity animated by OnboardingScreen.tsx (Framer Motion), 0 -> 0.5 */
+}
+
+@media (max-width: 767px) {
+  .textLayer {
+    top: 16px;
+  }
+}

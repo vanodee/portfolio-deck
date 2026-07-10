@@ -1,0 +1,23 @@
+/* Normal-flow child of PlayArea's .frame — pinned at the top of the play
+   area (does not scroll away with the card grid beneath it). */
+.heading {
+  /* A table-surface watermark, not a UI overlay — must stay under the
+     canvas (z-index: 0) in paint order so cards always read as physically
+     on top of it, even where a scrolled card overlaps the pinned heading. */
+  position: relative;
+  z-index: -1;
+  flex-shrink: 0;
+  text-align: center;
+  padding-top: 10px;
+  /* DS §2.1 — Meow Script, table-level decorative only */
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(48px, 8vw, 96px);
+  /* color: var(--heading-color); */
+  color: var(--tagline-color);
+  /* opacity animated by PickACardHeading.tsx (Framer Motion), 0 -> 0.2 */
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}

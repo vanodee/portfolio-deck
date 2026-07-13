@@ -182,4 +182,50 @@ export const MOTION = {
     headingTranslateY: 60, // px, upward exit distance
     headingDuration: 500, // ms
   },
+
+  // Route toggle (ControlDock right group, DockToggle.tsx) — the thumb's
+  // slide + the sequenced icon de-emphasis/re-emphasis around it.
+  // thumbTravelPx must match ControlDock.module.css's .toggleTrack geometry
+  // (thumb diameter 45 -- it lands flush against the opposite groove wall,
+  // no gap; see that file's comment for the border-box accounting) — it
+  // lives here because it's consumed as a Framer Motion `x` transform, not
+  // a CSS property. Placeholder values, same pending-tuning caveat as
+  // onboarding/tableNav above.
+  //
+  // The toggle's own animation (thumbDuration below) is deliberately much
+  // shorter than the actual Home <-> About navigation it triggers
+  // (lib/choreography.ts's beginTableNavExit, ~1.1s+ for the deck to slide
+  // off-table) -- ControlDock.tsx flips the toggle optimistically on click
+  // rather than waiting for the route to actually change, so the control
+  // itself always feels immediately responsive. Once thumbDuration elapses,
+  // ControlDock.tsx disables the whole dock (matching the existing
+  // dealing/open-card "locked" treatment) until the real transition
+  // finishes, rather than leaving the dock clickable while the toggle's
+  // visual state doesn't yet match the in-flight navigation.
+  dockToggle: {
+    thumbTravelPx: 45, // px, left (Home) rest -> right (About) rest
+    thumbDuration: 320, // ms — thumb translateX, openEaseBezierPoints
+    iconOutDuration: 150, // ms — origin icon's scale/opacity de-emphasis, starts immediately as the thumb departs (delay 0)
+    iconInDuration: 180, // ms — destination icon's scale/opacity re-emphasis
+    iconInDelay: 140, // ms — thumbDuration - iconInDuration, timed so the destination icon finishes exactly as the thumb arrives, not simultaneously with the origin's fade. Update this if thumbDuration/iconInDuration change.
+    inactiveScale: 0.72, // inactive icon's scale-down from its 30px rest size
+    inactiveOpacity: 0.45, // inactive icon's dimmed opacity
+  },
+
+  // Left dock-group route-swap (ControlDock's Eye/Shuffle <-> Email/
+  // LinkedIn/X) — triggered by the same toggle click as MOTION.dockToggle
+  // above, on the same "flip immediately, don't wait for the real route
+  // change" philosophy: the current side's buttons translate down and fade
+  // out, staggered one after another, the instant the toggle is clicked;
+  // once the route actually changes and the new side's buttons mount, they
+  // play the exact reverse (translate up from below + fade in), same
+  // per-button order. Both totals finish well within MOTION.dockToggle
+  // .thumbDuration + the navBusy lockout window, long before the ~1.1s+
+  // beginTableNavExit navigation itself fires. Placeholder values, same
+  // pending-tuning caveat as the rest of this file.
+  dockLeftSwap: {
+    offsetY: 14, // px, downward exit / upward-from entrance offset
+    duration: 220, // ms, per button
+    stagger: 60, // ms, delay between each button's start
+  },
 } as const;

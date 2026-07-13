@@ -125,6 +125,33 @@ export function exitCardsOffTable() {
   });
 }
 
+/**
+ * Click-triggered entry point (About button, Back-to-Home button). Guards
+ * against re-entry via the store (rejects if a nav exit is already in
+ * flight), flips dockNavPhase to "collapsing" (which is what
+ * useShowTableContent/PlayArea react to by calling exitCardsOffTable, and
+ * PickACardHeading reacts to directly), then waits for the deck's own
+ * off-table exit to finish before calling back — mirroring dealTable's
+ * setTimeout(totalDuration, ...) completion idiom. The caller supplies
+ * `onComplete` (typically `() => router.push(destination)`) since this
+ * plain module has no hook access to next/navigation's router. ControlDock
+ * itself persists across the route change (app/layout.tsx) and has no
+ * animation of its own to wait for here.
+ */
+export function beginTableNavExit(onComplete: () => void) {
+  const store = useTableStore.getState();
+  const started = store.beginDockCollapse();
+  if (!started) return;
+  const total =
+    Math.max(0, store.cardOrder.length - 1) * MOTION.tableNav.cardStagger +
+    MOTION.tableNav.cardDuration +
+    100; // settle margin, mirrors dealTable/gatherAround's pattern
+  setTimeout(() => {
+    useTableStore.getState().beginDockExpand();
+    onComplete();
+  }, total);
+}
+
 /** Shuffle (PRD §4.4): derangement + staggered curved travel. */
 export function shuffleTable() {
   const store = useTableStore.getState();

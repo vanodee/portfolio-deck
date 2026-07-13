@@ -1,8 +1,8 @@
 # PRD: Card Table Portfolio (Prototype Phase)
 
-**Status:** Draft v12 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout — structure/content only, entrance choreography still pending)
+**Status:** Draft v14 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout — structure/content only, entrance choreography still pending; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px)
 **Owner:** [Your name]
-**Last updated:** July 9, 2026
+**Last updated:** July 13, 2026
 
 ---
 
@@ -106,10 +106,12 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 
 **Resolved (Phase 1 build, July 2026):** the control dock's About button navigates to a dedicated `/about` route rather than opening an in-page overlay — resolving §10's "About panel treatment" open question in favor of its own route. Home's cards, canvas, and open-card overlay are Home-only and never render on `/about`.
 
-- Clicking About plays the dock's onboarding-formation choreography (§4.1, Design System §3.5) in reverse before navigating: the dock's buttons stagger inward toward center and its pill contracts to the small rest-state ellipse, the standalone wordmark logo reappears via the same shared-element handoff used on first load (mirrored), and — Home-side only — the deck slides off-table to the left while fading, with the "Pick a Card" heading fading out and translating upward. Only once this settles does the actual route change fire.
-- On `/about`, the identical dock-formation choreography plays forward — the standalone logo travels back into the dock, the pill expands, and About's own button set staggers in: **Email, LinkedIn, X** (left group) and **Resume, Back to Home** (right group). All five are one-shot actions (open mail client / open a profile link / download a resume / navigate home), reusing the existing dock button interaction spec (Design System §3.3) — no new states.
-- **Back to Home** reverses the whole sequence symmetrically, and additionally guarantees the visitor never sees the onboarding gate on return: even if `/about` was reached via a direct link/bookmark (Home never actually dealt this session), Back to Home forces the deal to "complete" before Home mounts, so the deck simply translates into frame already dealt rather than replaying "Hello!"/the entrance deal.
-- The table header (wordmark/tagline) and the play area's frame/dashed border persist across both routes as site-wide chrome — unlike Home's own onboarding gate (§4.1), which still hides them until the first deck click, they're visible immediately on `/about`, including a direct load.
+**Revised (July 2026):** the control dock itself is now persistent site-wide chrome (like the table header and play-area frame below) rather than a per-route instance that replays its onboarding-formation choreography on every navigation. About and Back-to-Home no longer trigger any dock animation — the dock's button content swaps instantly, in place, the moment the route changes. The dock's onboarding-formation sequence (§4.1, Design System §3.5) still plays exactly once, on Home, the first time the deck is clicked.
+
+- Clicking About (or Back to Home) still delays the actual route change briefly: the deck slides off-table to the left while fading, and the "Pick a Card" heading fades out and translates upward (Home-side only, unaffected by this revision) — only once that settles does navigation fire. The dock itself is unaffected and stays fully interactive throughout.
+- On `/about`, the dock immediately shows its About button set — **Email, LinkedIn, X** (left group), **Resume, Back to Home** (right group) — no travel/crossfade/expand sequence, since the dock never left. All five are one-shot actions (open mail client / open a profile link / download a resume / navigate home), reusing the existing dock button interaction spec (Design System §3.3) — no new states.
+- **Back to Home** additionally guarantees the visitor never sees the onboarding gate on return: even if `/about` was reached via a direct link/bookmark (Home never actually dealt this session), Back to Home forces the deal to "complete" before Home mounts, so the deck simply translates into frame already dealt rather than replaying "Hello!"/the entrance deal.
+- The table header (wordmark/tagline), the play area's frame/dashed border, and the control dock all persist across both routes as site-wide chrome — unlike Home's own onboarding gate (§4.1), which still hides the header/heading/border/dock until the first deck click, they're visible immediately on `/about`, including a direct load.
 - **Resolved (Phase 1 build, July 2026):** About's own substantive layout/content is now built — six sections (Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, "Ready to deal?"), per Design System §3.11 — structure and copy only, no entrance/scroll choreography yet (a separate follow-up). Its Email/LinkedIn/X/Resume destinations remain placeholders (`lib/aboutLinks.ts`, tracked in `CHECKLIST.md`).
 
 ---
@@ -191,9 +193,10 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Dashed play-area border:** permanent UI element — the tablecloth edge, and (as of the play-area refactor) the app's real main content container and scroll boundary, not decorative-only (Design System §4.3).
 - **Cover/reveal + shuffle while a card is open:** visible but disabled (reduced opacity, non-interactive) until the card closes.
 - **Dealer's choice card:** shuffles freely — the gold treatment reads even face-down, so no positional guarantee is needed.
-- **About dock icon:** wired to real navigation — clicking it plays the dock-nav route transition (§4.8) and takes the visitor to `/about`.
-- **About panel treatment:** resolved as its own route (`/about`), not the card-open DOM overlay pattern — see §4.8. Routing/transition architecture is built and functioning.
+- **About dock icon:** wired to real navigation — clicking it takes the visitor to `/about` (§4.8). The dock itself persists across the navigation with no transition of its own; only the deck/heading table-nav exit briefly delays the route change.
+- **About panel treatment:** resolved as its own route (`/about`), not the card-open DOM overlay pattern — see §4.8. Routing architecture is built and functioning.
 - **About page content:** the page's own section layout and copy are now built (§4.8, Design System §3.11) — Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, and a closing "Ready to deal?" text, using all four previously-unplaced building blocks: Chip (`components/dom/Chip.tsx`, Design System §3.7), Brand Card (`components/dom/BrandCard.tsx`, Design System §3.8), Photo Card (`components/dom/PhotoCard.tsx`/`PhotoCardSpread.tsx`, Design System §3.9), and Experience Card (`components/dom/ExperienceCard.tsx`/`ExperienceCardSpread.tsx`, Design System §3.10).
+- **Control dock on mobile:** below 767px the dock restacks into a centered vertical column (logo, left group, right group) rather than staying a horizontal pill with no room left to shrink — see Design System §3.3 for the exact layout.
 
 ### Still open
 

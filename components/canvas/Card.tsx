@@ -113,8 +113,7 @@ export default function Card({
   // needs to know to start off-table and animate itself in — there's no
   // continuously-mounted instance left for an external trigger to reach.
   // dockNavPhase never resets to "idle" once a nav transition has happened
-  // (store/useTableStore.ts), so this is a reliable one-time mount check —
-  // mirrors hooks/useDockNavFormation.ts's same signal.
+  // (store/useTableStore.ts), so this is a reliable one-time mount check.
   const [startOffTable] = useState(() => useTableStore.getState().dockNavPhase !== "idle");
   const restZ = stackIndex * 0.05;
 

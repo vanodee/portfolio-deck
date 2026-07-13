@@ -7,22 +7,15 @@ import styles from "./StandaloneLogo.module.css";
 
 interface StandaloneLogoProps {
   showing: boolean;
-  /** True only for the reverse/origin role (lib/dockChoreography.ts): a
-   * fresh instance that just mounted at the dock's rect and needs to
-   * crossfade in before traveling out to the standalone position. Default
-   * (false) reproduces the original onboarding behavior — already mounted,
-   * travels toward a dock, then crossfades out on exit. */
-  enteringFromDock?: boolean;
 }
 
 // Standalone wordmark mark (DS §3.5) — the layoutId="logo-mark-travel"
-// shared-element source/destination for the dock-formation handoff, shared
-// by OnboardingScreen (original onboarding gate) and the Home <-> About
-// dock-nav transition (lib/dockChoreography.ts), which reuses this same
-// fixed position/asset on both pages so the FLIP reads as seamless across
-// the actual route boundary even though no DOM node persists across it.
-export default function StandaloneLogo({ showing, enteringFromDock = false }: StandaloneLogoProps) {
-  const { layout, opacity } = standaloneLogoTransition(enteringFromDock);
+// shared-element source for the onboarding dock-formation handoff: this
+// instance travels/scales via FLIP onto ControlDock's center logo slot
+// (components/dom/ControlDock.tsx) once onboarding ends, then crossfades
+// out as the dock crossfades in.
+export default function StandaloneLogo({ showing }: StandaloneLogoProps) {
+  const { layout, opacity } = standaloneLogoTransition();
   return (
     <div className={styles.logoLayer} aria-hidden={!showing}>
       <AnimatePresence>
@@ -31,9 +24,9 @@ export default function StandaloneLogo({ showing, enteringFromDock = false }: St
             key="standalone-logo"
             layoutId="logo-mark-travel"
             className={styles.logoWrap}
-            initial={enteringFromDock ? { opacity: 0 } : false}
+            initial={false}
             animate={{ opacity: 1 }}
-            exit={enteringFromDock ? undefined : { opacity: 0 }}
+            exit={{ opacity: 0 }}
             transition={{ layout, opacity }}
           >
             <img src="/assets/logo-mark.png" alt="" aria-hidden="true" />

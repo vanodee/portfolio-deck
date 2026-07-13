@@ -1,10 +1,8 @@
-/* Standalone wordmark mark (DS §3.5) — fixed above the WebGL canvas on
-   both Home (OnboardingScreen) and About (dock-nav transition), at the
-   exact same viewport position/size on each so the shared-element handoff
-   reads as seamless across an actual route change (no DOM node persists
-   across it — see lib/dockChoreography.ts / hooks/useDockNavFormation.ts).
-   Pointer-events:none so clicks always fall through to whatever's
-   underneath (the deck's own click target on Home, nothing on About). */
+/* Standalone wordmark mark (DS §3.5) — fixed above the WebGL canvas,
+   shown only during Home's onboarding gate (OnboardingScreen), at the
+   position/size that FLIPs onto ControlDock's center logo slot once
+   onboarding ends (see lib/dockChoreography.ts). Pointer-events:none so
+   clicks always fall through to the deck's own click target underneath. */
 .logoLayer {
   position: fixed;
   bottom: 14vh;

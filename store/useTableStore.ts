@@ -37,14 +37,18 @@ export interface CardState {
 
 export type AppPhase = "onboarding" | "dealing" | "table";
 
-// Home <-> About dock route-transition phase (DS §3.5 formation sequence,
-// played in reverse then forward again for the About round trip). Kept
+// Home <-> About table-nav phase: gates the deck-off-table-slide + "Pick a
+// Card" heading exit (lib/choreography.ts's beginTableNavExit/
+// exitCardsOffTable, hooks/useShowTableContent.ts). ControlDock itself no
+// longer animates on route change (it persists across the route, see
+// components/dom/ControlDock.tsx) — this phase exists purely for the
+// deck/heading, which aren't hoisted into the canvas the same way. Kept
 // independent of AppPhase, which is Home/onboarding-specific and would
 // otherwise be meaningless on the About page. Persists across client-side
 // route navigation since this store is a module-level singleton — the
 // origin page sets "collapsing", the destination page's first render still
 // sees it. A hard reload re-instantiates the store at "idle", which is the
-// desired "render already formed, no animation" behavior for a direct load.
+// desired "render already settled, no animation" behavior for a direct load.
 // "expanding" is also the permanent resting state once a nav has settled
 // (there's no reset back to "idle" — the next collapse just starts from
 // "expanding" again, since a page that arrived via nav can itself later
@@ -80,17 +84,18 @@ interface TableStore {
   /** Called once the closing scale-down and the scatter-back settle. */
   finishClose: () => void;
 
-  /** Origin page: starts the reverse (collapse) sequence. Guarded no-op
-   * (returns false) unless a collapse isn't already in flight — covers
-   * double-clicking the trigger. "expanding" (the resting state once a
-   * previous nav has settled) is a valid starting point too, since a page
-   * that arrived via nav can itself later trigger the next collapse (e.g.
-   * About settling in, then the visitor clicking Back to Home). */
+  /** Starts the deck/heading table-nav exit. Guarded no-op (returns false)
+   * unless a collapse isn't already in flight — covers double-clicking the
+   * trigger. "expanding" (the resting state once a previous nav has
+   * settled) is a valid starting point too, since a page that arrived via
+   * nav can itself later trigger the next collapse (e.g. About settling in,
+   * then the visitor clicking Back to Home). */
   beginDockCollapse: () => boolean;
-  /** Destination page, once mounted having arrived via a collapse
-   * elsewhere: starts the forward (expand) sequence. Guarded no-op unless
-   * currently "collapsing". Settles at "expanding" permanently — there's no
-   * reset back to "idle"; the next collapse simply starts from there. */
+  /** Called once the deck's off-table exit has finished, right before the
+   * actual navigation (lib/choreography.ts's beginTableNavExit). Guarded
+   * no-op unless currently "collapsing". Settles at "expanding" permanently
+   * — there's no reset back to "idle"; the next collapse simply starts from
+   * there. */
   beginDockExpand: () => void;
 }
 

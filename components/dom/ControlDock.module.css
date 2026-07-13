@@ -2,8 +2,9 @@
    truly-centered logo (grid, not flex — see ControlDock.tsx/DS §3.3 for why
    flex space-between can't guarantee true centering once the two groups
    hold different numbers of buttons). Buttons + logo are their own nested
-   glass layer inside this outer glass panel. Shared by both ControlDock.tsx
-   (Home) and AboutDock.tsx (About) — every class here is content-agnostic. */
+   glass layer inside this outer glass panel. One persistent dock
+   (ControlDock.tsx) swaps its button content between Home and About —
+   every class here is content-agnostic. */
 
 .dock {
   position: fixed;
@@ -45,8 +46,14 @@
   justify-content: flex-end;
 }
 
-.button {
-  position: relative;
+/* Shared 45px glass "bubble" visual — fill/border/shadow/blur/size only, no
+   position or interactive states, so it can be reused by elements with
+   different positioning (.button: relative + CSS hover/press) or different
+   interactivity models (.toggleThumb below: absolute + Framer Motion-driven,
+   which needs sole ownership of `transform` — a co-existing CSS :hover/
+   :active rule targeting the same property would fight Framer Motion's own
+   inline-style writes). */
+.buttonGlass {
   width: 45px;
   height: 45px;
   border-radius: 999px;
@@ -57,6 +64,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.button {
+  composes: buttonGlass;
+  position: relative;
   transition:
     border-color 200ms ease,
     opacity 200ms ease,
@@ -142,6 +154,88 @@
   transition: opacity 220ms ease;
 }
 
+/* Route toggle (Home <-> About, DockToggle.tsx) — a groove carved into the
+   dock's own surface (inset shadows only, no raised outer shadow or bright
+   highlight stop — reads as a recessed cavity, the inverse of .dock's own
+   embossed look), holding a thumb that's visually identical to .button (see
+   .buttonGlass above). Geometry: the app applies a global `box-sizing:
+   border-box` reset (app/globals.css), so .toggleTrack's own 1px border eats
+   into its border-box width/height — the actual containing block the
+   absolutely-positioned thumb/icon-slots lay out against is (width/height -
+   2x border), NOT the declared width/height directly. Track width/height
+   are sized so that (declared size - 2x border) leaves exactly thumb
+   diameter (45, from .buttonGlass) + 2x groove padding on each axis — get
+   this wrong and the thumb/icons drift off-center (as they did before this
+   fix: track was 96x51 with no border accounted for, landing the "checked"
+   thumb position 2px past the right icon slot and 2px off-center
+   vertically). Thumb travel = thumb diameter (lands flush against the
+   opposite groove wall, no gap) — mirrored in MOTION.dockToggle
+   .thumbTravelPx (Framer Motion needs it as a JS number) since it doesn't
+   change with the border-accounting fix above; only trackWidth/trackHeight
+   here did. Provisional sizing, pending visual tuning against the reference
+   design. */
+
+.toggleContainer{
+  display: flex;
+}
+
+.toggleTrack {
+  position: relative;
+  width: 98px;
+  height: 53px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(160deg, rgba(3, 15, 10, 0.55) 0%, rgba(3, 15, 10, 0.38) 100%);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px) saturate(1.3);
+  transition: opacity 200ms ease;
+}
+
+.toggleTrack:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+.toggleThumb {
+  composes: buttonGlass;
+  position: absolute;
+  top: 3px;
+  left: 3px; /* rest position for checked=false (Home); Framer Motion's x
+                animates +45px for checked=true (About) */
+}
+
+.toggleIconSlot {
+  position: absolute;
+  top: 3px;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* .toggleTrack is the sole hit target */
+  z-index: 1; /* above .toggleThumb, so the active icon reads as sitting inside the glass circle */
+}
+
+.toggleIconLeft {
+  left: 3px;
+}
+
+.toggleIconRight {
+  right: 3px;
+}
+
+.toggleIcon {
+  width: 30px;
+  height: 30px;
+  display: block;
+  /* No static opacity/transform here — both icons' rest states are set via
+     Framer Motion `animate` (with `initial={false}`, see DockToggle.tsx) so
+     there's no flash-of-wrong-state before first paint. */
+}
+
 /* Center logo mark — embossed (DS §3.3 inset shadow) */
 .centerLogo {
   width: 45px;
@@ -164,9 +258,35 @@
   opacity: 0.9;
 }
 
+/* Below 767px there's no room left to shrink the horizontal pill (About's
+   3-button left group + Resume + 98px-wide toggle don't fit even at
+   calc(100vw - 24px)) — the dock restacks to a single column instead:
+   Logo, then left-group buttons, then right-group buttons, each row
+   centered. `.centerLogo` sits between the two `.group`s in DOM order
+   (ControlDock.tsx) but needs to render first here, hence `order: -1`
+   rather than a JSX change. */
 @media (max-width: 767px) {
   .dock {
-    width: calc(100vw - 24px);
+    grid-template-columns: 1fr;
+    row-gap: 32px;
+    width: fit-content;
+    max-width: calc(100vw - 24px);
+    padding: 16px 32px;
+    border-radius: 28px;
     bottom: 12px;
+  }
+
+  .centerLogo {
+    order: -1;
+  }
+
+  .group {
+    width: auto;
+    justify-content: center;
+  }
+
+  .group:first-child,
+  .group:last-child {
+    justify-self: center;
   }
 }

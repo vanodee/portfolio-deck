@@ -1,8 +1,13 @@
 /* Experience Card (About Experience section) — same shell/corner-mark
    treatment as PhotoCard.module.css (DS §3.10 deviation from the
-   8px-padding / single-watermark Card Front spec, §3.2), but text is
-   vertically centered in a bordered inner box rather than bottom-anchored,
-   per Figma node 54:2197. */
+   8px-padding / single-watermark Card Front spec, §3.2). Text is
+   top-left-anchored in the bordered inner box — a further deviation from
+   the original Figma-sourced vertical centering (node 54:2197), needed so
+   ExperienceCardSpread's narrowed fan/mobile peek-stack (responsive audit
+   follow-up) can reveal it without a neighboring card covering it: top for
+   the mobile stack's vertical peek, left (not centered) so the fan's
+   horizontal step only has to clear one edge of the text instead of both.
+   Flagged for a sync-specs pass. */
 
 .card {
   position: relative;
@@ -14,6 +19,18 @@
   box-shadow: var(--shadow-rest);
   overflow: hidden;
   box-sizing: border-box;
+}
+
+/* Mobile peek-stack only (ExperienceCard.tsx's `elevated` prop) — `--shadow
+   -rest`'s shadow (tuned for a card resting on the green felt background,
+   DS §5) reads too faintly card-on-card, where both surfaces are close to
+   white. A larger, mostly-downward offset (this stack has no horizontal
+   spread to account for, unlike the fan) makes each card visibly cast onto
+   the one it's resting on top of, selling "physically stacked" rather than
+   just "overlapping." Component-local value, not yet in the design system
+   doc's elevation table (DS §5) — flagged for a sync-specs pass. */
+.elevated {
+  box-shadow: 0px 10px 18px rgba(3, 15, 10, 0.45);
 }
 
 .cornerMarkTL,
@@ -38,10 +55,20 @@
 
 .content {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* align-items = vertical (cross-axis) for .content's default row
+     direction, justify-content = horizontal (main-axis) — top/left anchor,
+     not the centered box this was before. */
+  align-items: flex-start;
+  justify-content: flex-start;
   width: 100%;
   height: 100%;
+  /* Clears the corner marks (cornerMarkTL sits at top:6/left:6, ~16px tall)
+     before the text block starts; .content's own left edge (x:24, inside
+     .card's 24px padding) already clears cornerMarkTL's right edge (x:23
+     in .card-local coords) with no extra inset needed. 24px (not more) —
+     the mobile peek-stack's revealPx (lib/motion.ts) has to clear this
+     plus the text block itself, so keeping this tight matters. */
+  padding-top: 24px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 2px;
   box-sizing: border-box;
@@ -50,10 +77,17 @@
 .text {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 8px;
-  width: 100%;
+  /* Fixed (not max-width): ExperienceCardSpread.tsx's desktop fan relies on
+     this box's right edge staying inside MOTION.experienceFan.desktop's
+     xStepPx (150) minus a clearance margin, so a following card's higher
+     z-index never covers it — a fixed width keeps that edge in the same
+     place regardless of how short any one line is. Left-aligned (not
+     centered) so the full xStepPx budget goes toward keeping text clear of
+     the next card, instead of half being spent on the covered side. */
+  width: 105px;
   box-sizing: border-box;
 }
 
@@ -64,8 +98,7 @@
   letter-spacing: 2.4px;
   text-transform: uppercase;
   color: var(--card-front-text);
-  text-align: center;
-  width: 100%;
+  text-align: left;
   margin: 0;
 }
 
@@ -74,8 +107,7 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--card-front-text);
-  text-align: center;
-  width: 100%;
+  text-align: left;
   margin: 0;
 }
 
@@ -84,7 +116,6 @@
   font-size: 8px;
   font-weight: 400;
   color: var(--card-front-text);
-  text-align: center;
-  width: 100%;
+  text-align: left;
   margin: 0;
 }

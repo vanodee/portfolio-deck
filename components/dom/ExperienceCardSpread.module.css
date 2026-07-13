@@ -1,7 +1,50 @@
+/* Direct flex item of .runSpreadWrap (AboutContent.module.css) — the
+   ResizeObserver in ExperienceCardSpread.tsx measures THIS box's
+   clientWidth (always 100%, never shrinks — flex-shrink:0 guards that,
+   same reasoning as .spread below) to compute the fan's scale-down factor.
+   display:flex + justify-content:center centers .spread within it whenever
+   .spread's own (scaled) width comes out smaller than the full available
+   width — i.e. once the fan is already at native (unscaled) size and
+   there's room to spare. */
+.measure {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .spread {
   position: relative;
+  /* .measure (above) is a flex container, and this is its flex item —
+     without flex-shrink:0, the default flex-shrink:1 compresses this box
+     below its own inline `width` (ExperienceCardSpread.tsx's wrapWidth)
+     whenever it doesn't fit, which pushes every card's `calc(50% - Npx)`
+     position (computed against the INTENDED width) into negative
+     territory — rendering them partially off .spread's own left edge,
+     outside the reach of .runSpreadWrap's overflow-x:auto scrolling
+     (verified via live DOM measurement: .spread's rendered width was 478px
+     against a 664px inline style, with the leftmost card offset to -93px).
+     Shouldn't be reachable anymore now that .spread's own width is derived
+     directly from .measure's measured clientWidth (ExperienceCardSpread
+     .tsx) rather than fixed regardless of available space, but kept as a
+     guard against the same bug class recurring. */
+  flex-shrink: 0;
 }
 
 .slot {
   position: absolute;
+}
+
+/* Rotation (on .slot, ExperienceCardSpread.tsx) pivots around the already
+   scaled-size box's own center — correct for the fan look. This inner
+   wrapper handles the SIZE reduction only, separately, with a top-left
+   origin: ExperienceCard always renders at its native 214x300 (untouched —
+   no prop-driven sizing, no CSS changes needed there), and scaling it down
+   from its top-left corner produces a visual footprint that exactly fills
+   the outer .slot's own (already-scaled) width/height. Combining rotate
+   and scale into one transform on one element would make them fight over a
+   single shared transform-origin; keeping them on separate nested elements
+   avoids that. */
+.scaleInner {
+  transform-origin: top left;
 }

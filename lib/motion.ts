@@ -84,19 +84,44 @@ export const MOTION = {
   },
 
   // About page — Experience Card spread (Experience section). Also NOT a
-  // reuse/edit of `gather` — this fan is static (no interaction) and its
-  // horizontal step is sized specifically so every card's centered text
-  // block stays fully unobstructed at any rank, unlike `gather`'s tighter
-  // peeking-stack overlap.
+  // reuse/edit of `gather` — this fan is static (no interaction).
+  //
+  // Two responsive variants (ExperienceCardSpread.tsx switches on
+  // hooks/useBreakpoint.ts at the same 767px threshold the rest of the page
+  // uses): `desktop` is the horizontal fan below, `mobile` is a vertical
+  // peek-stack (top-anchored cards stacked directly on top of each other).
+  // ExperienceCard.module.css's text block is top-anchored (not centered)
+  // specifically so both variants can reveal it without needing separate
+  // text positioning per variant.
   experienceFan: {
-    // Must be ≥ the text block's right edge offset from the card's own
-    // left edge (24px outer padding + 8px text-block padding + 150px text
-    // width ≈ 182px) — otherwise a higher-z-index neighbor to the right
-    // covers the tail of this card's text, violating the "text always
-    // unobstructed" requirement. 190px gives an 8px clearance margin.
-    xStepPx: 190,
-    rotationStepDeg: 7, // rotation per step away from center
-    liftPx: 26, // vertical drop per step away from center (bow shape)
+    desktop: {
+      // Narrowed from the original 190/7/26 (responsive audit finding: the
+      // original fan's natural width, 214 + 3*190 = 784px, didn't fit any
+      // "desktop" viewport below ~980px, clipping cards with no way to
+      // scroll back to them). Tightening the step means a neighbor's card
+      // BODY now covers more of the previous card, which is why the text
+      // moved to the top of the card (ExperienceCard.module.css) — a
+      // trailing card's own top-anchored text sits above where the next
+      // card's top edge begins, so it stays clear even at this step.
+      // `.runSpreadWrap`'s `overflow-x: auto` (AboutContent.module.css) is
+      // the safety net if some in-between width still doesn't fit.
+      xStepPx: 150,
+      rotationStepDeg: 5, // rotation per step away from center
+      liftPx: 18, // vertical drop per step away from center (bow shape)
+    },
+    mobile: {
+      // Cards stacked directly on top of each other (no x offset, no
+      // rotation) — only `revealPx` differs per card, exposing just its
+      // (top-anchored) text above the card underneath. Two prior estimates
+      // (96px, then 135px) both verified too short via screenshot/DOM
+      // measurement — the worst case (longest title + company,
+      // "Sr. Product Designer" / "Pretzl (via Peanut Technologies)") renders
+      // its text block bottom edge 153px from the card's own top (measured
+      // live, getBoundingClientRect, after ExperienceCard.module.css's
+      // .content padding-top was also trimmed 32px->24px to help). 160px
+      // clears that with a small margin, rather than continuing to guess.
+      revealPx: 160,
+    },
   },
 
   // Ambient "dealer's choice" glow (PRD §4.7 / DS §1.7) — always-on soft

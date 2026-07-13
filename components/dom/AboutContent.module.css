@@ -28,7 +28,9 @@
   gap: 96px;
   padding: 96px 48px 140px;
   /* Bottom padding reserves clearance above the control dock (fixed,
-     bottom:20px, ~61px pill) so "Ready to deal?" never sits under it. */
+     bottom:20px, ~61px pill on desktop) so "Ready to deal?" never sits
+     under it. Mobile uses a different value (below) — the dock restacks
+     into a much taller column there, not the same pill. */
 }
 
 /* Shared section-heading recipes — DS §2.1 (Meow Script, table-level
@@ -111,6 +113,15 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  /* Without a definite width, this shrink-wraps to fit ExperienceCardSpread's
+     child instead of being constrained by the page column — that child has a
+     hard inline pixel width (ExperienceCardSpread.tsx), which becomes a
+     non-negotiable minimum this box is forced to honor once it can't shrink,
+     silently overflowing past .scrollRegion's overflow-x:hidden with no way
+     to scroll back to it (responsive audit finding). width:100% matches
+     .hero's existing pattern and is what lets .runSpreadWrap's own
+     overflow-x:auto (below) actually do anything. */
+  width: 100%;
 }
 
 .runSpreadWrap {
@@ -118,7 +129,38 @@
   width: 100%;
   max-width: 100%;
   display: flex;
-  justify-content: center;
+  /* `safe center` centers the spread when it fits, but falls back to
+     start-alignment (fully scroll-reachable) when it overflows. Plain
+     `flex-start` was tried first, but with no leftover space to differ on
+     (content exactly matched the container in every case then measured) it
+     looked identical while content still didn't fit — the real bug was
+     ExperienceCardSpread.module.css's .spread getting flex-shrunk below its
+     own inline width (missing flex-shrink:0), which pushed cards to
+     negative offsets outside ANY justify-content's reach. With that fixed,
+     .spread now reliably overflows (not shrinks) when too narrow, `safe`
+     correctly detects it, and centering at wide widths (1024px+, confirmed
+     via screenshot) no longer regresses to a left-hugging fan. Unconditional
+     (not mobile-gated) — this is the safety net for ExperienceCardSpread
+     .tsx's narrowed-but-still-fixed-width fan: if the tuned fan geometry
+     ever doesn't quite fit some in-between viewport width, this is what
+     makes it reachable by scroll instead of silently clipped by
+     .scrollRegion's overflow-x:hidden (responsive audit finding — this used
+     to be mobile-only and, combined with .run's old missing width:100% and
+     .spread's missing flex-shrink:0, never actually engaged). */
+  justify-content: safe center;
+  overflow-x: auto;
+  padding-bottom: 8px; /* clearance for a visible scrollbar, whenever one appears */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.runSpreadWrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+.runSpreadWrap::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
 }
 
 /* ---- House Rules ---- */
@@ -209,12 +251,18 @@
   text-align: center;
 }
 
-@media (max-width: 767px) {
-  .content {
-    gap: 64px;
-    padding: 48px 20px 120px; /* dock sits at bottom:12px on mobile */
-  }
-
+/* Hero-only breakpoint, wider than the page's general 767px mobile cutover
+   below. Above 767px, .heroText and .heroPhotos share one row (base rule),
+   and each hits a hard floor that can't shrink further — .heroText can't go
+   below 284px (two unwrapped 130px stat chips + 24px gap), .heroPhotos can't
+   go below 248px (PhotoCardSpread's true native size, since data/photos.ts
+   only seeds 2 placeholder photos). 284 + 248 + .hero's own 48px gap = 580px
+   minimum, which .hero's own shrinking box drops below starting around
+   870px viewport width (measured: fits at 880px, 20px overflow at 850px,
+   growing to 90px by 780px) — the photo card visibly bled past the dashed
+   frame border through that whole 767-870px dead zone (responsive audit
+   finding). 920px gives ~50px of margin above the measured failure point. */
+@media (max-width: 920px) {
   .hero {
     text-align: center;
     flex-direction: column-reverse;
@@ -225,7 +273,11 @@
   }
 
   .heroIntro {
-    max-width: 100%;
+    /* Matches .houseRulesBody's 600px cap (DS pattern for stacked-column
+       body copy) — without this, stacking at a much wider breakpoint than
+       767px would otherwise let the paragraph stretch to near-full column
+       width, producing uncomfortably long lines. */
+    max-width: 600px;
   }
 
   .statChips {
@@ -236,11 +288,19 @@
   .heroPhotos {
     margin-top: 16px;
   }
+}
 
-  .runSpreadWrap {
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 8px; /* clearance for a visible scrollbar */
+@media (max-width: 767px) {
+  .content {
+    gap: 64px;
+    /* Below 767px the dock restacks into a ~248px-tall fixed column
+       (ControlDock.module.css) instead of staying a ~61px pill — 120px
+       wasn't enough clearance and "Ready to deal?" stayed permanently
+       hidden behind it even scrolled to the true bottom (responsive audit
+       finding). Derived the same way as lib/layout.ts's MOBILE.bottomPad:
+       dock height (236, from its own padding/row-gap/toggle-height) + 12px
+       bottom offset = 248, plus a small margin. */
+    padding: 48px 20px 264px;
   }
 
   .toolGrid {
@@ -250,6 +310,8 @@
   }
 
   .brandGrid {
-    gap: 16px;
+    /* Matches BrandCard.module.css's mobile card-size comment: 12px gap is
+       what its 130px card width budget (320px viewport) assumes. */
+    gap: 12px;
   }
 }

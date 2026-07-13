@@ -56,3 +56,40 @@
 .logo {
   object-fit: contain;
 }
+
+/* Below 767px, .brandGrid's flex-wrap only ever produced a single column —
+   at a 375px viewport (335px available content width), two 230px cards +
+   16px gap need 476px, nowhere close (responsive audit follow-up). Shrunk
+   here (not in AboutContent.module.css) since BrandCard, unlike PhotoCard/
+   ExperienceCard, has no Figma-fixed-size constraint (net-new component,
+   DS §3.8) — safe to resize. Sized for a 2-column fit down to a 320px
+   phone specifically (320 - 40px page padding - 12px .brandGrid gap,
+   halved = 134px budget per card; 130px leaves a small margin) — wider
+   phones grow past 2 columns on their own via .brandGrid's flex-wrap once
+   more cards comfortably fit, no extra breakpoint needed. letter-spacing
+   also pulled in (0.5em was already tight against .name's max-width at the
+   original 230px size, per data/brands.ts's longer placeholder names like
+   "Bramblewood Collective") — kept as wide as fits rather than dropped to
+   nothing, so the tracked-out wordmark treatment still reads at the
+   smaller size. */
+@media (max-width: 767px) {
+  .card {
+    width: 130px;
+    height: 104px;
+    padding: 0.625rem;
+  }
+
+  .name,
+  .logo {
+    top: 0.625rem;
+    left: 0.625rem;
+    width: calc(100% - 1.25rem);
+    height: calc(100% - 1.25rem);
+  }
+
+  .name {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    line-height: 1.3;
+  }
+}

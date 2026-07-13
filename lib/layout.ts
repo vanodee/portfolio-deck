@@ -40,7 +40,19 @@ export const MOBILE = {
   outerPad: 16,
   cols: 3,
   topPad: 64,
-  bottomPad: 32,
+  // Below 767px the control dock restacks into a fixed-position vertical
+  // column (ControlDock.module.css's max-width:767px block) that sits on
+  // top of the card grid rather than beside it — 32px wasn't enough
+  // clearance, so the last row stayed permanently hidden (and unclickable)
+  // behind the dock even scrolled all the way down (responsive audit
+  // finding). Derived from the stacked dock's own fixed mobile geometry:
+  // 16px*2 padding + centerLogo(42) + toggleTrack-height row(53, the
+  // tallest of the two button rows) + the other button row(45) + 2x32px
+  // row-gap = 236px dock height, +12px bottom offset = 248px total
+  // footprint from the viewport's bottom edge. Recompute if ControlDock's
+  // mobile padding/row-gap/bottom offset or DockToggle's track height
+  // change.
+  bottomPad: 264,
 } as const;
 
 export interface CardLayout {
@@ -98,16 +110,36 @@ export function getLayout(
     return { cardW: w, cardH: h, positions, deck, contentWidth, contentHeight };
   }
 
-  const { cardW, cardH, pitchX, pitchY, cols, outerPadX, topPad, bottomPad, referenceRows } =
-    DESKTOP;
-  const gridW = (cols - 1) * pitchX + cardW;
+  const {
+    cardW,
+    cardH,
+    pitchX,
+    pitchY,
+    cols: maxCols,
+    outerPadX,
+    topPad,
+    bottomPad,
+    referenceRows,
+  } = DESKTOP;
   const referenceGridH = (referenceRows - 1) * pitchY + cardH;
-  const heightBudget = availableHeight - topPad - bottomPad;
-  const scale = Math.min(
-    1,
-    heightBudget / referenceGridH,
-    (contentWidth - outerPadX * 2) / gridW,
-  );
+  const heightScale = Math.min(1, (availableHeight - topPad - bottomPad) / referenceGridH);
+  // A hard mobile/desktop breakpoint used to force maxCols (4) columns the
+  // instant a viewport crossed 767px, even though 4 full-size columns need
+  // ~1360px+ of contentWidth to actually fit — cards got visibly SMALLER
+  // moving from the mobile grid into "desktop" (responsive audit finding,
+  // DS §4.1 gap). Comparing maxCols against one fewer column and keeping
+  // whichever yields the larger scale means a narrower "desktop" viewport
+  // renders 3 wide columns instead of 4 cramped ones, and the switch to 4
+  // only happens once it no longer shrinks anything relative to 3 — the
+  // crossover is continuous by construction, not a guessed pixel breakpoint.
+  const scaleFor = (n: number) => {
+    const gridW = (n - 1) * pitchX + cardW;
+    return Math.min(heightScale, (contentWidth - outerPadX * 2) / gridW);
+  };
+  const narrowScale = scaleFor(maxCols - 1);
+  const wideScale = scaleFor(maxCols);
+  const cols = wideScale >= narrowScale ? maxCols : maxCols - 1;
+  const scale = cols === maxCols ? wideScale : narrowScale;
   const w = cardW * scale;
   const h = cardH * scale;
   const stepX = pitchX * scale;

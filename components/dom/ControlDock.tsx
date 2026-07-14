@@ -5,7 +5,12 @@ import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTableStore } from "@/store/useTableStore";
-import { toggleRevealAll, shuffleTable, beginTableNavExit } from "@/lib/choreography";
+import {
+  toggleRevealAll,
+  shuffleTable,
+  beginTableNavExit,
+  beginAboutNavExit,
+} from "@/lib/choreography";
 import {
   dockButtonVariants,
   dockExtendDelay,
@@ -146,7 +151,7 @@ export default function ControlDock() {
       // slides into frame (Card.tsx's startOffTable). Idempotent/harmless
       // on a normal round trip where dealing already happened.
       useTableStore.getState().setDealComplete();
-      beginTableNavExit(() => router.push("/"));
+      beginAboutNavExit(() => router.push("/"));
     }
   }
 

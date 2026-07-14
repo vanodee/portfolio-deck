@@ -140,6 +140,25 @@
   transition: transform 320ms ease-in-out, filter 320ms ease-in-out;
 }
 
+/* JS-driven equivalent of the :hover block below (About page section-reveal,
+   hooks/useEntranceHoldReveal.ts) — a tool chip arrives already in this pose
+   during its entrance, then settles back to idle via the unconditional
+   .chipLabel/.chipWrapperTool .chip transitions above. Deliberately outside
+   the (hover: hover) guard below since this must also work on touch. Same
+   declarations as :hover, verbatim, so a JS-forced reveal and a real mouse
+   hover look identical. */
+.chipWrapperTool.forceRevealed .chip {
+  transform: translateY(-14px) scale(1.03);
+  filter: drop-shadow(var(--shadow-hover));
+  transition: transform 220ms ease-out, filter 220ms ease-out;
+}
+
+.chipWrapperTool.forceRevealed .chipLabel {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+
 @media (hover: hover) and (pointer: fine) {
   /* Hover is bound to the wrapper, not the chip itself — once the chip
      lifts, the cursor sitting in the revealed gap over the label must stay

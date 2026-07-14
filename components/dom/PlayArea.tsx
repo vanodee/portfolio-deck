@@ -71,6 +71,22 @@ export default function PlayArea() {
     }
   }, [showTableContent]);
 
+  // Settles dockNavPhase "collapsing" -> "expanding" (lib/choreography.ts's
+  // beginTableNavExit/beginAboutNavExit) once `onHome` — derived straight
+  // from pathname — has actually changed, rather than on a timer inside
+  // those functions. router.push resolves asynchronously (verified live:
+  // the pathname update lands a real ~80ms+ after router.push is called,
+  // not the same tick/transition), so settling it there left a window where
+  // dockNavPhase had already left "collapsing" while the outgoing route was
+  // still showing — useShowTableContent/PickACardHeading/AboutContent's
+  // `exiting` all key directly off dockNavPhase, so that window read as a
+  // visible stutter of the outgoing route right before the real navigation
+  // landed. Keying this off `onHome` instead guarantees it can't fire early.
+  // Guarded no-op unless a collapse is actually in flight (store).
+  useEffect(() => {
+    useTableStore.getState().beginDockExpand();
+  }, [onHome]);
+
   const frameRef = useRef<HTMLDivElement>(null);
   const proxyRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);

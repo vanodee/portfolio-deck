@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { ExperienceCardData } from "@/data/types";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
@@ -39,8 +40,16 @@ const CARD_H = 300;
 //     now anchors its text — regardless of position in the stack.
 export default function ExperienceCardSpread({
   experiences,
+  revealArmed = false,
+  revealTriggered = false,
 }: {
   experiences: ExperienceCardData[];
+  /** About page section-reveal (hooks/useAboutSectionsGate.ts) — whether the
+   * first-visit "dealt in" entrance should play at all this mount. */
+  revealArmed?: boolean;
+  /** Whether this section has actually scrolled into view and its entrance
+   * should be playing/have played (hooks/useSectionReveal.ts). */
+  revealTriggered?: boolean;
 }) {
   const cards = experiences.slice(0, MAX_CARDS);
   const breakpoint = useBreakpoint();
@@ -58,19 +67,61 @@ export default function ExperienceCardSpread({
     return () => ro.disconnect();
   }, []);
 
+  // Entrance choreography: cards deal in ascending index order — both
+  // layouts already have z-index ascend with index (later cards drawn on
+  // top), so "topmost dealt last" falls out of plain array order with no
+  // reordering needed. Once the stagger has had time to finish, reverts to
+  // an immediate (duration: 0) transition so ResizeObserver-driven
+  // rotate/position recalculations snap instantly like before this feature,
+  // rather than replaying the entrance's eased transition on every resize.
+  const [entranceSettled, setEntranceSettled] = useState(false);
+  const usingEntranceTransition = revealArmed && !entranceSettled;
+  useEffect(() => {
+    if (!revealArmed || !revealTriggered || entranceSettled) return;
+    // Items deal in strictly one-at-a-time (delay_i = i * (duration +
+    // stagger), see entranceTransition below) — total time is that same
+    // per-item interval times the count, plus the last card's own duration.
+    const total =
+      Math.max(0, cards.length - 1) *
+        (MOTION.aboutSectionReveal.duration + MOTION.aboutSectionReveal.stagger) +
+      MOTION.aboutSectionReveal.duration +
+      100; // settle margin, mirrors lib/choreography.ts's setTimeout(total, ...) idiom
+    const t = setTimeout(() => setEntranceSettled(true), total);
+    return () => clearTimeout(t);
+  }, [revealArmed, revealTriggered, entranceSettled, cards.length]);
+
+  const entranceTransition = (index: number) =>
+    usingEntranceTransition
+      ? {
+          // Strictly one-at-a-time: each card doesn't start until the
+          // previous one has fully finished (+ a breathing gap).
+          delay:
+            (index * (MOTION.aboutSectionReveal.duration + MOTION.aboutSectionReveal.stagger)) /
+            1000,
+          duration: MOTION.aboutSectionReveal.duration / 1000,
+          ease: "easeOut" as const,
+        }
+      : { duration: 0 };
+
   if (breakpoint === "mobile") {
     const { revealPx } = MOTION.experienceFan.mobile;
     const wrapHeight = Math.max(cards.length - 1, 0) * revealPx + CARD_H;
     return (
       <div className={styles.spread} style={{ width: CARD_W, height: wrapHeight }}>
         {cards.map((experience, index) => (
-          <div
+          <motion.div
             key={experience.id}
             className={styles.slot}
             style={{ left: 0, top: index * revealPx, zIndex: index }}
+            initial={revealArmed ? { y: MOTION.aboutSectionReveal.translateY, opacity: 0 } : false}
+            animate={{
+              y: !revealArmed || revealTriggered ? 0 : MOTION.aboutSectionReveal.translateY,
+              opacity: !revealArmed || revealTriggered ? 1 : 0,
+            }}
+            transition={entranceTransition(index)}
           >
             <ExperienceCard experience={experience} elevated />
-          </div>
+          </motion.div>
         ))}
       </div>
     );
@@ -149,7 +200,7 @@ export default function ExperienceCardSpread({
           const centerX = (g.cx - minLeft) * scale;
           const centerY = (g.cy - minTop) * scale;
           return (
-            <div
+            <motion.div
               key={experience.id}
               className={styles.slot}
               style={{
@@ -157,14 +208,26 @@ export default function ExperienceCardSpread({
                 top: centerY - scaledCardH / 2,
                 width: scaledCardW,
                 height: scaledCardH,
-                // Rotates the already-scaled-size outer box (pivots around
-                // its own center, correct for the fan look) — the inner
-                // .scaleInner (below) handles the size reduction itself,
-                // separately, with its own top-left origin, so the two
-                // transforms don't fight over a shared origin.
-                transform: `rotate(${g.rotate}deg)`,
                 zIndex: index,
               }}
+              // Rotates the already-scaled-size outer box (pivots around its
+              // own center, correct for the fan look) — the inner
+              // .scaleInner (below) handles the size reduction itself,
+              // separately, with its own top-left origin, so the two
+              // transforms don't fight over a shared origin. Framer now owns
+              // this transform (rotate moved from a static inline style into
+              // animate) so it can also carry the entrance y/opacity.
+              initial={
+                revealArmed
+                  ? { rotate: g.rotate, y: MOTION.aboutSectionReveal.translateY, opacity: 0 }
+                  : false
+              }
+              animate={{
+                rotate: g.rotate,
+                y: !revealArmed || revealTriggered ? 0 : MOTION.aboutSectionReveal.translateY,
+                opacity: !revealArmed || revealTriggered ? 1 : 0,
+              }}
+              transition={entranceTransition(index)}
             >
               <div
                 className={styles.scaleInner}
@@ -172,7 +235,7 @@ export default function ExperienceCardSpread({
               >
                 <ExperienceCard experience={experience} />
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

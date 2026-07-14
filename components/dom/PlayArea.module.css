@@ -25,6 +25,12 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  /* Confines AboutContent's own route-transition translate (its scrollRegion
+     root, ControlDock's dom/AboutContent.tsx) to this box instead of
+     bleeding past the dashed border — safe for the WebGL canvas too, since
+     TableCanvas.tsx clips itself via a CSS clip-path derived from this same
+     frame's measured rect, not via this overflow. */
+  overflow: hidden;
   /* Alpha channel only, driven by PlayArea.tsx via --frame-border-alpha
      (0 during onboarding, fades to 0.35 once the deck is clicked) — border
      style/width/geometry never change, so the scroll-boundary box this

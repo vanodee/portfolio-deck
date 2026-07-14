@@ -1,8 +1,8 @@
 # PRD: Card Table Portfolio (Prototype Phase)
 
-**Status:** Draft v14 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout — structure/content only, entrance choreography still pending; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px)
+**Status:** Draft v16 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection)
 **Owner:** [Your name]
-**Last updated:** July 13, 2026
+**Last updated:** July 14, 2026
 
 ---
 
@@ -109,10 +109,12 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 **Revised (July 2026):** the control dock itself is now persistent site-wide chrome (like the table header and play-area frame below) rather than a per-route instance that replays its onboarding-formation choreography on every navigation. About and Back-to-Home no longer trigger any dock animation — the dock's button content swaps instantly, in place, the moment the route changes. The dock's onboarding-formation sequence (§4.1, Design System §3.5) still plays exactly once, on Home, the first time the deck is clicked.
 
 - Clicking About (or Back to Home) still delays the actual route change briefly: the deck slides off-table to the left while fading, and the "Pick a Card" heading fades out and translates upward (Home-side only, unaffected by this revision) — only once that settles does navigation fire. The dock itself is unaffected and stays fully interactive throughout.
+- **About's own content now animates too (resolved, July 2026):** on Home -> About, `AboutContent` translates in from the right + fades as it mounts; on About -> Home, it translates out to the right + fades *before* the route actually changes — its own brief pre-navigation delay, mirroring the deck/heading's existing one above, so Home's translate-in-from-left plays cleanly right after. A direct load of `/about` skips this and renders already settled, same rule as the rest of this section's chrome.
 - On `/about`, the dock immediately shows its About button set — **Email, LinkedIn, X** (left group), **Resume, Back to Home** (right group) — no travel/crossfade/expand sequence, since the dock never left. All five are one-shot actions (open mail client / open a profile link / download a resume / navigate home), reusing the existing dock button interaction spec (Design System §3.3) — no new states.
 - **Back to Home** additionally guarantees the visitor never sees the onboarding gate on return: even if `/about` was reached via a direct link/bookmark (Home never actually dealt this session), Back to Home forces the deal to "complete" before Home mounts, so the deck simply translates into frame already dealt rather than replaying "Hello!"/the entrance deal.
 - The table header (wordmark/tagline), the play area's frame/dashed border, and the control dock all persist across both routes as site-wide chrome — unlike Home's own onboarding gate (§4.1), which still hides the header/heading/border/dock until the first deck click, they're visible immediately on `/about`, including a direct load.
-- **Resolved (Phase 1 build, July 2026):** About's own substantive layout/content is now built — six sections (Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, "Ready to deal?"), per Design System §3.11 — structure and copy only, no entrance/scroll choreography yet (a separate follow-up). Its Email/LinkedIn/X/Resume destinations remain placeholders (`lib/aboutLinks.ts`, tracked in `CHECKLIST.md`).
+- **Resolved (Phase 1 build, July 2026):** About's own substantive layout/content is now built — six sections (Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, "Ready to deal?"), per Design System §3.11. Its Email/LinkedIn/X/Resume destinations remain placeholders (`lib/aboutLinks.ts`, tracked in `CHECKLIST.md`).
+- **Resolved (follow-up pass, July 2026):** Hero, The Run, Chips up my sleeve, and Tables I've Played each play a first-visit-only "dealt in" section-reveal on viewport intersection — gated the same way Home's onboarding gate is (a store flag that never resets except a hard reload), and held back until the page-level Home -> About slide-in has settled on a nav-arrival. House Rules and the closing "Ready to deal?" text remain plain copy with no reveal (Design System §3.11/§7 item 18).
 
 ---
 
@@ -193,13 +195,12 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Dashed play-area border:** permanent UI element — the tablecloth edge, and (as of the play-area refactor) the app's real main content container and scroll boundary, not decorative-only (Design System §4.3).
 - **Cover/reveal + shuffle while a card is open:** visible but disabled (reduced opacity, non-interactive) until the card closes.
 - **Dealer's choice card:** shuffles freely — the gold treatment reads even face-down, so no positional guarantee is needed.
-- **About dock icon:** wired to real navigation — clicking it takes the visitor to `/about` (§4.8). The dock itself persists across the navigation with no transition of its own; only the deck/heading table-nav exit briefly delays the route change.
+- **About dock icon:** wired to real navigation — clicking it takes the visitor to `/about` (§4.8). The dock itself persists across the navigation with no transition of its own; the deck/heading table-nav exit and (on the way back) About's own content translate/fade briefly delay the route change instead.
 - **About panel treatment:** resolved as its own route (`/about`), not the card-open DOM overlay pattern — see §4.8. Routing architecture is built and functioning.
 - **About page content:** the page's own section layout and copy are now built (§4.8, Design System §3.11) — Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, and a closing "Ready to deal?" text, using all four previously-unplaced building blocks: Chip (`components/dom/Chip.tsx`, Design System §3.7), Brand Card (`components/dom/BrandCard.tsx`, Design System §3.8), Photo Card (`components/dom/PhotoCard.tsx`/`PhotoCardSpread.tsx`, Design System §3.9), and Experience Card (`components/dom/ExperienceCard.tsx`/`ExperienceCardSpread.tsx`, Design System §3.10).
 - **Control dock on mobile:** below 767px the dock restacks into a centered vertical column (logo, left group, right group) rather than staying a horizontal pill with no room left to shrink — see Design System §3.3 for the exact layout.
 
 ### Still open
 
-- **About page section entrance/scroll choreography:** the section layout above renders directly in its final resting state — no reveals, stagger, or scroll-triggered animation yet. A separate follow-up pass once the structure is confirmed (Design System §7).
 - **Real contact/resume destinations:** the About dock's Email, LinkedIn, X, and Resume all point to placeholder values (`lib/aboutLinks.ts`) pending real links and a resume file.
 - **Real tool-chip logo assets:** the new Tools section (`data/tools.ts`) reuses the one real logo asset that exists (`Typescript.png`) as a placeholder across all 19 entries — a confirmed decision for this pass, not an oversight; real per-tool icons are a separate follow-up (Design System §7).

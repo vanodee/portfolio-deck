@@ -137,6 +137,16 @@ export function exitCardsOffTable() {
  * plain module has no hook access to next/navigation's router. ControlDock
  * itself persists across the route change (app/layout.tsx) and has no
  * animation of its own to wait for here.
+ *
+ * Deliberately does NOT flip dockNavPhase to "expanding" itself — router.push
+ * resolves asynchronously (verified live: ~80ms+ after this fires, not the
+ * same tick), so doing it here left a real window where dockNavPhase had
+ * already left "collapsing" while `pathname` was still stale, and
+ * useShowTableContent/PickACardHeading (keyed directly off dockNavPhase)
+ * would flip back to "showing" for that window — a visible stutter of the
+ * outgoing route right before the real navigation landed. PlayArea.tsx
+ * settles the phase itself instead, from an effect keyed on the *actual*
+ * onHome/pathname change, which by construction can't fire early.
  */
 export function beginTableNavExit(onComplete: () => void) {
   const store = useTableStore.getState();
@@ -146,10 +156,26 @@ export function beginTableNavExit(onComplete: () => void) {
     Math.max(0, store.cardOrder.length - 1) * MOTION.tableNav.cardStagger +
     MOTION.tableNav.cardDuration +
     100; // settle margin, mirrors dealTable/gatherAround's pattern
-  setTimeout(() => {
-    useTableStore.getState().beginDockExpand();
-    onComplete();
-  }, total);
+  setTimeout(onComplete, total);
+}
+
+/**
+ * About -> Home nav exit (Back to Home button). Mirrors beginTableNavExit's
+ * collapse/onComplete shape, but waits on AboutContent's own translate+fade
+ * exit (MOTION.aboutNav) instead of the deck's per-card stagger — About's
+ * content is a single DOM block, not individually-animated WebGL cards.
+ * Reuses the same dockNavPhase guard/state so AboutContent (still mounted at
+ * this point — the route hasn't changed yet) can react to "collapsing"
+ * directly, the same way Card.tsx reacts to it via useShowTableContent on the
+ * Home side. Also doesn't flip to "expanding" itself — see
+ * beginTableNavExit's comment above for why; PlayArea.tsx settles it once
+ * `onHome` actually changes.
+ */
+export function beginAboutNavExit(onComplete: () => void) {
+  const store = useTableStore.getState();
+  const started = store.beginDockCollapse();
+  if (!started) return;
+  setTimeout(onComplete, MOTION.aboutNav.duration + 100); // settle margin, mirrors beginTableNavExit
 }
 
 /** Shuffle (PRD §4.4): derangement + staggered curved travel. */

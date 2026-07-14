@@ -11,7 +11,7 @@ This is the **Phase 1 prototype**: a standalone build with mock/hardcoded conten
 - **Cover / reveal** — a global toggle flips the whole table between face-down and face-up in one action.
 - **Open / close** — clicking a card flips it (if covered), gathers the rest of the deck behind it, then scales it up into a scrollable reading view; closing reverses the sequence.
 - **Hover "tell"** — lingering on a covered card triggers a partial peek flip, like a poker tell.
-- **About route** — a dedicated `/about` page with its own dock-formation route transition, reusing the same shared-element choreography as the table.
+- **About route** — a dedicated `/about` page. The control dock persists across the route change with no transition of its own; the page's own content slides in/out from the right, timed alongside the table's deck sliding off/on. First-visit-only, its four card/chip sections (Hero, The Run, Chips up my sleeve, Tables I've Played) deal themselves in one at a time on scroll.
 - **Responsive** — below a breakpoint, the free-form table collapses to a static 3-column grid with the same interactions.
 
 See `card-table-portfolio-prd.md` for the full feature spec and `card-table-portfolio-design-system.md` for exact tokens, timings, easings, and dimensions.

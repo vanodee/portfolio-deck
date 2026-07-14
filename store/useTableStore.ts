@@ -69,6 +69,14 @@ interface TableStore {
   openedCardIds: Set<string>;
 
   dockNavPhase: DockNavPhase;
+  // About page section-reveal (hooks/useAboutSectionsGate.ts): whether the
+  // first-visit "dealt in" stagger for Hero/Run/Chips/Brands has already
+  // played this session. Same "set once, never reset except a hard reload"
+  // convention as dealComplete/dockNavPhase above — a plain boolean is
+  // sufficient here (unlike dockNavPhase) since nothing else in the app
+  // needs to react to an in-progress intermediate state, only "has it
+  // happened yet."
+  aboutSectionsRevealed: boolean;
 
   /** onboarding -> dealing, guarded no-op once already past onboarding. */
   startDealing: () => void;
@@ -97,6 +105,10 @@ interface TableStore {
    * — there's no reset back to "idle"; the next collapse simply starts from
    * there. */
   beginDockExpand: () => void;
+
+  /** Marks the About section-reveal as played. Guarded no-op if already
+   * true — never resets (see aboutSectionsRevealed's doc comment above). */
+  markAboutSectionsRevealed: () => void;
 }
 
 function initialCards(): { cards: Record<string, CardState>; order: string[] } {
@@ -140,6 +152,7 @@ export const useTableStore = create<TableStore>()((set, get) => ({
   openedCardIds: new Set<string>(),
 
   dockNavPhase: "idle",
+  aboutSectionsRevealed: false,
 
   startDealing: () => {
     if (get().appPhase !== "onboarding") return;
@@ -240,6 +253,11 @@ export const useTableStore = create<TableStore>()((set, get) => ({
   beginDockExpand: () => {
     if (get().dockNavPhase !== "collapsing") return;
     set({ dockNavPhase: "expanding" });
+  },
+
+  markAboutSectionsRevealed: () => {
+    if (get().aboutSectionsRevealed) return;
+    set({ aboutSectionsRevealed: true });
   },
 }));
 

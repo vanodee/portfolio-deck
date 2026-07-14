@@ -208,6 +208,39 @@ export const MOTION = {
     headingDuration: 500, // ms
   },
 
+  // About page's own content translate+fade on Home <-> About nav — a single
+  // DOM block, not staggered WebGL cards, so this is its own (smaller, no
+  // stagger) counterpart to tableNav above. Placeholder values, same
+  // pending-tuning caveat as tableNav/onboarding.
+  aboutNav: {
+    translateX: 60, // px, "from the right" entrance/exit offset
+    duration: 500, // ms
+  },
+
+  // About page section-reveal — the first-visit-only "dealt in" stagger for
+  // Hero's photo cards/stat chips, The Run's experience cards, the tool-chip
+  // grid, and the brand-card grid (hooks/useAboutSectionsGate.ts,
+  // hooks/useSectionReveal.ts, hooks/useEntranceHoldReveal.ts). Distinct from
+  // aboutNav above, which is the page-level slide-in/out on route change —
+  // this is purely within-page, per-section, viewport-triggered choreography.
+  // Placeholder values, same pending-tuning caveat as onboarding/tableNav.
+  aboutSectionReveal: {
+    translateY: 40, // px, "from below" starting offset for every deal-in element
+    duration: 220, // ms, per-item translate+fade-in
+    // Gap AFTER a given item's own entrance fully finishes, before the next
+    // item's starts — items are sequenced strictly one-at-a-time (delay_i =
+    // i * (duration + stagger)), never overlapping, so this is breathing
+    // room between entrances rather than an overlap offset.
+    stagger: 10,
+    heroChipsGap: 150, // ms, extra gap after Hero's photo-card stagger fully finishes before stat chips begin
+    chipHoldDuration: 650, // ms, a tool chip stays in forced-hover (name-revealed) pose before settling to idle
+    brandHoldDuration: 650, // ms, a brand card stays in forced-reveal (logo-shown) pose before settling to its name
+    // Padding added on top of MOTION.aboutNav.duration when gating reveal
+    // start on nav-arrivals (About mounted via router.push, not a direct/
+    // hard-reloaded load) — mirrors beginAboutNavExit's own settle-margin.
+    routeTransitionBuffer: 100,
+  },
+
   // Route toggle (ControlDock right group, DockToggle.tsx) — the thumb's
   // slide + the sequenced icon de-emphasis/re-emphasis around it.
   // thumbTravelPx must match ControlDock.module.css's .toggleTrack geometry

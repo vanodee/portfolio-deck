@@ -149,7 +149,23 @@
      .spread's missing flex-shrink:0, never actually engaged). */
   justify-content: safe center;
   overflow-x: auto;
-  padding-bottom: 8px; /* clearance for a visible scrollbar, whenever one appears */
+  /* Explicit, not just the implied default — without this, the CSS Overflow
+     spec silently upgrades overflow-y to auto too (same gotcha noted above
+     for an earlier bug). The section-reveal entrance (About page
+     section-reveal, ExperienceCardSpread.tsx) sits each card translateY'd
+     below its resting slot for the entire pre-trigger wait, not just while
+     animating — that transform-based visual overflow was enough to trigger
+     the auto-upgraded vertical scrollbar to actually engage. Horizontal
+     scroll stays intentional (the fan's own fallback); vertical never should
+     be. */
+  overflow-y: hidden;
+  /* 8px scrollbar clearance + 40px reserved for the section-reveal entrance's
+     own starting offset (MOTION.aboutSectionReveal.translateY, lib/motion.ts
+     — keep these in sync if that value changes). Without the extra 40px,
+     overflow-y:hidden above would clip the bottom of each card while it's
+     still translated down pre-trigger/mid-animation, instead of just
+     suppressing the scrollbar that offset would otherwise cause. */
+  padding-bottom: 48px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
 }

@@ -1,19 +1,39 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
 import type { CSSProperties } from "react";
 import { useId } from "react";
+import { motion } from "framer-motion";
+import { MOTION } from "@/lib/motion";
+import { useEntranceHoldReveal } from "@/hooks/useEntranceHoldReveal";
 import styles from "./Chip.module.css";
 
-interface StatChipData {
+interface RevealProps {
+  /** About page section-reveal (hooks/useAboutSectionsGate.ts) — whether the
+   * first-visit "dealt in" entrance should play at all this mount. */
+  revealArmed?: boolean;
+  /** Whether this chip's section has actually scrolled into view and its
+   * entrance should be playing/have played (hooks/useSectionReveal.ts). */
+  revealTriggered?: boolean;
+  /** This chip's own stagger position within its section, in ms. */
+  revealDelayMs?: number;
+}
+
+interface StatChipData extends RevealProps {
   value: string;
   label: string;
   color: string;
 }
 
-interface ToolChipData {
+interface ToolChipData extends RevealProps {
   name: string;
   logoSrc: string;
   logoAlt: string;
   color: string;
+  /** How long (ms) this tool chip stays in its forced-hover (name-revealed)
+   * pose before settling to idle — omitted/0 for no forced-reveal at all
+   * (e.g. Hero's stat chips never pass this). */
+  revealHoldMs?: number;
 }
 
 type ChipProps = ({ variant: "stat" } & StatChipData) | ({ variant: "tool" } & ToolChipData);
@@ -43,6 +63,21 @@ const CENTER_DISC_PATH =
 export default function Chip(props: ChipProps) {
   const rawId = useId();
   const uid = rawId.replace(/[^a-zA-Z0-9]/g, "");
+
+  const revealArmed = props.revealArmed ?? false;
+  const revealTriggered = props.revealTriggered ?? false;
+  const revealDelayMs = props.revealDelayMs ?? 0;
+  // Called unconditionally regardless of variant (rules-of-hooks) — only the
+  // tool variant actually consumes the result; stat chips never pass
+  // revealHoldMs, so this is always a guaranteed no-op for them.
+  const forceRevealedResult = useEntranceHoldReveal(
+    revealArmed,
+    revealTriggered,
+    revealDelayMs,
+    MOTION.aboutSectionReveal.duration,
+    props.variant === "tool" ? (props.revealHoldMs ?? 0) : 0,
+  );
+  const forceRevealed = props.variant === "tool" && forceRevealedResult;
 
   const chip = (
     <div className={styles.chip} style={{ "--chip-color": props.color } as CSSProperties}>
@@ -205,16 +240,43 @@ export default function Chip(props: ChipProps) {
     </div>
   );
 
+  const entranceInitial = revealArmed
+    ? { y: MOTION.aboutSectionReveal.translateY, opacity: 0 }
+    : false;
+  const entranceAnimate = {
+    y: !revealArmed || revealTriggered ? 0 : MOTION.aboutSectionReveal.translateY,
+    opacity: !revealArmed || revealTriggered ? 1 : 0,
+  };
+  const entranceTransition = {
+    delay: revealDelayMs / 1000,
+    duration: MOTION.aboutSectionReveal.duration / 1000,
+    ease: "easeOut" as const,
+  };
+
   if (props.variant === "stat") {
-    return <div className={styles.chipWrapperStat}>{chip}</div>;
+    return (
+      <motion.div
+        className={styles.chipWrapperStat}
+        initial={entranceInitial}
+        animate={entranceAnimate}
+        transition={entranceTransition}
+      >
+        {chip}
+      </motion.div>
+    );
   }
 
   return (
-    <div className={styles.chipWrapperTool}>
+    <motion.div
+      className={`${styles.chipWrapperTool} ${forceRevealed ? styles.forceRevealed : ""}`}
+      initial={entranceInitial}
+      animate={entranceAnimate}
+      transition={entranceTransition}
+    >
       {chip}
       <div className={styles.chipLabel} style={{ background: props.color }} aria-hidden="true">
         {props.name}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -4,9 +4,11 @@ Features and work items **not yet built**, grouped by roadmap phase (PRD §9).
 Phase 1 core (onboarding gate, deal, idle bob, cover/reveal, shuffle,
 open/close, mobile grid, peek, flagship card, chip tracker, keyboard
 baseline) is implemented, as is the About page's routing/dock-transition
-architecture and its own section content — Hero, The Run, House Rules,
+architecture, its own section content — Hero, The Run, House Rules,
 Chips up my sleeve, Tables I've Played, Ready to deal (PRD §4.8, DS
-§3.6/§3.11) — this list is everything that remains.
+§3.6/§3.11) — and, for four of those six sections, a first-visit-only
+section-reveal entrance (PRD §4.8, DS §3.11/§7 item 18) — this list is
+everything that remains.
 
 ## Phase 1 — stretch (cut-line items, PRD §4.7 / §9)
 
@@ -25,17 +27,17 @@ Chips up my sleeve, Tables I've Played, Ready to deal (PRD §4.8, DS
 
 ## About page — content & polish (PRD §4.8, DS §3.6/§3.11)
 
-The route, dock, Home <-> About transition, and the page's own section
-content (`components/dom/AboutContent.tsx`, DS §3.11) are built and
+The route, dock, Home <-> About transition, the page's own section
+content (`components/dom/AboutContent.tsx`, DS §3.11), and a first-visit-only
+section-reveal entrance for four of the six sections are built and
 functioning — Hero (intro + stat Chips + Photo Card spread), The Run
-(Experience Card spread), House Rules (body copy), Chips up my sleeve (tool
-Chip grid), Tables I've Played (Brand Card grid), and a closing "Ready to
-deal?" text. What's left:
+(Experience Card spread), House Rules (body copy, no reveal), Chips up my
+sleeve (tool Chip grid), Tables I've Played (Brand Card grid), and a closing
+"Ready to deal?" text (no reveal). What's left:
 
-- [ ] **About page section entrance/scroll choreography** — the six sections above render directly in their final resting layout with real copy; no reveals, stagger, or scroll-triggered animation yet (DS §7 item 10) — a separate follow-up pass
 - [ ] **Real tool-chip logo assets** — `data/tools.ts` (DS §3.11) reuses the one real logo asset that exists (`Typescript.png`) as a placeholder across all 19 entries; real per-tool icons (Figma, Photoshop, Notion, etc.) are a deliberately deferred follow-up (DS §7 item 12)
 - [ ] **Real contact/resume destinations** — Email, LinkedIn, X, and Resume all point to placeholder values in `lib/aboutLinks.ts`; swap in real links and a resume file
-- [ ] **Route-transition timing pass** — `MOTION.tableNav` (deck/heading exit-enter, `lib/motion.ts`) is marked in code as a placeholder, same as the onboarding values below
+- [ ] **Route-transition + section-reveal timing pass** — `MOTION.tableNav` (deck/heading exit-enter) and `MOTION.aboutSectionReveal` (section-reveal stagger/hold, `lib/motion.ts`) are marked in code as placeholders, same as the onboarding values below
 
 ## Phase 2 — CMS (PRD §9)
 
@@ -54,7 +56,7 @@ deal?" text. What's left:
 ## Non-feature housekeeping
 
 - [ ] **Onboarding gate has no keyboard/screen-reader path** — the deck's click target (`DeckClickCatcher.tsx`) is a Three.js pointer-events mesh only; a keyboard-only visitor currently cannot trigger the deal and has no way to reach the table at all (PRD §8, DS §3.5)
-- [ ] **Onboarding + route-transition timing values need a tuning pass** — `MOTION.onboardingShuffle` / `MOTION.onboarding` / `MOTION.tableNav` (`lib/motion.ts`) are marked in code as placeholders (DS §6/§7) — also listed under "About page — content & polish" above
+- [ ] **Onboarding + route-transition + section-reveal timing values need a tuning pass** — `MOTION.onboardingShuffle` / `MOTION.onboarding` / `MOTION.tableNav` / `MOTION.aboutNav` / `MOTION.aboutSectionReveal` (`lib/motion.ts`) are marked in code as placeholders (DS §6/§7) — also listed under "About page — content & polish" above
 - [ ] **Full accessibility polish** — prototype ships the PRD §8 baseline (focusable card buttons, Escape, focus rings); a full pass (screen-reader flow, reduced-motion support, contrast audit) is deferred
 - [ ] **`git init`** — the project has no version control yet (and lives in OneDrive; consider relocating the repo when code work resumes)
 - [ ] **Test framework** — no automated tests; `scripts/snap.mjs` covers visual verification only

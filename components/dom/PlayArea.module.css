@@ -96,6 +96,14 @@
   overflow-x: hidden;
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: rgba(255, 255, 255, 0.35) transparent; /* Firefox */
+  /* Opacity (set inline by PlayArea.tsx from the same dealComplete/
+     openCardId booleans that drive ControlDock's `locked` state) fades the
+     rail in lockstep with the dock buttons: same 200ms ease as
+     ControlDock.module.css's `.button`/`.button:disabled` transition, so
+     the rail's onboarding entrance and its lock/unlock through the
+     open-card lifecycle read as the same dock-wide gesture rather than an
+     independent cut. Recompute if that value changes. */
+  transition: opacity 200ms ease;
 }
 
 .scrollbarRail::-webkit-scrollbar {

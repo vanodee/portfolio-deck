@@ -54,6 +54,11 @@ export default function PlayArea() {
   // positions yet mid-deal, so scrolling shouldn't re-enable until then).
   const dealComplete = useTableStore((s) => s.dealComplete);
   const scrollDisabled = !dealComplete;
+  // Exactly mirrors ControlDock's onHome `locked` expression (!dealComplete
+  // || openCardId !== null) inverted — so the rail's fade and the dock
+  // buttons' disabled-opacity fade trigger off the same instant, not just
+  // the same duration.
+  const railVisible = !scrollDisabled && !scrollLocked;
 
   // Home <-> About dock-nav transition: the deck slides off-table to the
   // left and fades (About click). Card.tsx/TableCanvas fully unmount once
@@ -174,6 +179,11 @@ export default function PlayArea() {
         isSyncingRailRef.current = false;
         return;
       }
+      // Fresh store read, not the closed-over `scrollLocked` render value —
+      // a drag already in flight when a card opens keeps firing native
+      // scroll events regardless of the rail's pointer-events, and a stale
+      // render-time boolean would still let those through for a frame.
+      if (useTableStore.getState().openCardId !== null) return;
       const proxy = proxyRef.current;
       targetScrollRef.current = rail.scrollTop;
       scrollYRef.current = rail.scrollTop;
@@ -198,6 +208,13 @@ export default function PlayArea() {
   );
 
   const handleScrollForward = (deltaY: number, immediate: boolean) => {
+    // Fresh store read, not a closed-over render value — closes the race
+    // where a wheel/touch event dispatched in the same tick as opening a
+    // card could still land before TableCanvas's pointer-events:none
+    // re-render commits. Locked for the whole flip->gather->scale->open->
+    // closing->scatter lifecycle, same as the dock buttons (openCardId only
+    // clears in finishClose(), once the deck is actually restored).
+    if (useTableStore.getState().openCardId !== null) return;
     const proxy = proxyRef.current;
     if (!proxy) return;
     const max = Math.max(0, proxy.scrollHeight - proxy.clientHeight);
@@ -235,9 +252,16 @@ export default function PlayArea() {
                 ref={railRef}
                 className={styles.scrollbarRail}
                 style={{
-                  pointerEvents: scrollLocked || scrollDisabled ? "none" : "auto",
-                  display: scrollDisabled ? "none" : undefined,
+                  opacity: railVisible ? 1 : 0,
+                  pointerEvents: railVisible ? "auto" : "none",
                 }}
+                // Chromium makes scrollable overflow containers keyboard-
+                // focusable by default, independent of pointer-events — now
+                // that hiding the rail is opacity (animatable) rather than
+                // display:none (which used to remove it from the tab order
+                // for free), an explicit -1 is needed while locked/disabled
+                // so keyboard users can't Tab onto an invisible focus stop.
+                tabIndex={railVisible ? undefined : -1}
               >
                 {layout && <div style={{ height: layout.contentHeight }} />}
               </div>

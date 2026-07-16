@@ -15,6 +15,17 @@
   box-shadow: var(--shadow-opened);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(28, 28, 28, 0.35) transparent;
+}
+
+.pane::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pane::-webkit-scrollbar-thumb {
+  background-color: rgba(28, 28, 28, 0.35);
+  border-radius: 999px;
 }
 
 .close {

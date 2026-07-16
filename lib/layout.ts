@@ -174,7 +174,7 @@ export function getLayout(
  */
 export function getReadingPane(viewportW: number, viewportH: number) {
   const mobile = viewportW <= MOBILE_BREAKPOINT;
-  const width = mobile ? viewportW - 16 : Math.min(680, viewportW - 32);
+  const width = mobile ? viewportW - 16 : Math.min(1000, viewportW - 32);
   const top = mobile ? 8 : Math.max(24, viewportH * 0.06);
   return { width, top };
 }

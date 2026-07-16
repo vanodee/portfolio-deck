@@ -4,6 +4,7 @@
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useIsNotFoundRoute } from "@/hooks/useIsNotFoundRoute";
 import { useTableStore } from "@/store/useTableStore";
 import {
   toggleRevealAll,
@@ -62,6 +63,13 @@ export default function ControlDock() {
   const router = useRouter();
   const pathname = usePathname();
   const onHome = pathname === "/";
+  // 404 route (app/not-found.tsx) — this component renders nothing there at
+  // all (see the early return at the bottom of this function): clicking the
+  // 404 card spread goes straight into Home's onboarding state, which has no
+  // dock either, so there's nothing for this dock to usefully show. `notFound`
+  // is still computed with the rest of the hooks above the early return (Rules
+  // of Hooks — every hook here must run unconditionally on every render).
+  const notFound = useIsNotFoundRoute();
 
   const allRevealed = useTableStore((s) => s.allRevealed);
   const dealComplete = useTableStore((s) => s.dealComplete);
@@ -169,6 +177,11 @@ export default function ControlDock() {
 
   const extendDelay = dockExtendDelay(formed);
   const groupVariants = dockGroupVariants(extendDelay);
+
+  // Every hook above must still run on every render (Rules of Hooks) even
+  // though this component renders nothing on the 404 route — this early
+  // return only skips the JSX/output, not any hook call.
+  if (notFound) return null;
 
   return (
     <motion.nav
@@ -302,7 +315,7 @@ export default function ControlDock() {
             href={ABOUT_LINKS.resume}
           />
         </motion.div>
-        <motion.div 
+        <motion.div
           className={styles.toggleContainer}
           variants={dockButtonVariants}
         >

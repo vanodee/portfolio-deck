@@ -286,4 +286,29 @@ export const MOTION = {
     duration: 220, // ms, per button
     stagger: 60, // ms, delay between each button's start
   },
+
+  // 404 page (app/not-found.tsx, components/dom/NotFoundContent.tsx). Not
+  // part of the design system yet — placeholder values pending user tuning,
+  // same caveat as onboarding/tableNav/aboutNav above. No dock-related
+  // tokens here — ControlDock renders nothing at all on this route
+  // (components/dom/ControlDock.tsx), since clicking the card spread goes
+  // straight into Home's onboarding state, which has no dock either.
+  notFound: {
+    entranceDuration: 500, // ms — whole-block mount fade+translateY, self-contained (does NOT hook into dockNavPhase/aboutNav)
+    entranceTranslateY: 40, // px, "from below" starting offset
+
+    // The 4/0/4 card fan's rest geometry directly reuses
+    // MOTION.experienceFan.desktop (xStepPx/rotationStepDeg/liftPx) — a
+    // deliberate mirror of "The Run" section's card-fan look (About page),
+    // not a new geometry. Similarly, each card's own deal-in/out reuses
+    // MOTION.aboutSectionReveal's translateY/duration/stagger verbatim (the
+    // same "fade up from below, one at a time" recipe Photo/Experience Card
+    // entrances use) rather than redeclaring those numbers here — only the
+    // ambient-loop-specific values (which aboutSectionReveal has no
+    // equivalent for, since it's a one-shot reveal, not a loop) live below.
+    cardLoop: {
+      holdDuration: 1600, // ms — pause at the fanned/dealt-in rest position before dealing back out
+      cycleGap: 500, // ms — pause at the dealt-out (faded) position before the next loop
+    },
+  },
 } as const;

@@ -1,0 +1,170 @@
+/* 404 page's frame-interior scroll region — same plain overflow-y:auto
+   pattern as AboutContent.module.css's .scrollRegion (no WebGL canvas on
+   this route either, so no need for PlayArea's eased-scroll/draggable-rail
+   system). */
+.stage {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.stage::-webkit-scrollbar {
+  width: 6px;
+}
+
+.stage::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+/* The whole content block is vertically centered within the frame
+   (min-height:100% + justify-content:center — same safe-centering pattern
+   as AboutContent.module.css's .runSpreadWrap comment: centers when it
+   fits, but .stage's own overflow-y:auto still reaches it if it doesn't). */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  gap: 24px;
+  padding: 48px 24px;
+}
+
+/* Spread sits in normal flow (reserves its own real height, so .footer
+   below always clears it regardless of viewport); "Bust!" is absolutely
+   aligned to this block's own top edge, so the cards — pushed down via
+   padding-top below — only ever overlap its lower portion, leaving most of
+   the word visible above them. That padding-top is a fraction of
+   .bustHeading's own font-size clamp (not a fixed px value) so the same
+   proportion of the word stays visible at every viewport width — see the
+   mobile override below for the matching fraction at that breakpoint's
+   font-size clamp. */
+.bustBlock {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: clamp(100px, 19vw, 275px);
+}
+
+/* DS §2.1 — Meow Script, table-level decorative only. Much larger than
+   PickACardHeading's 96px cap and dimmer (60% opacity, vs. that watermark's
+   full-strength tagline-color) — this page's own oversized hero element,
+   not a background watermark. Not yet in the design system doc, flagged for
+   a sync-specs pass alongside the rest of this page's new tokens. */
+.bustHeading {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-script);
+  font-weight: 300;
+  font-size: clamp(140px, 26vw, 380px);
+  color: var(--tagline-color);
+  opacity: 0.4;
+  line-height: 1;
+  margin: 0;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* The click target for returning to the table (no separate text link; see
+   NotFoundContent.tsx). */
+.spreadLink {
+  position: relative;
+  display: block;
+  border-radius: 8px;
+}
+
+.spreadLink:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 6px;
+}
+
+.spread {
+  position: relative;
+  width: 460px;
+  height: 300px;
+}
+
+/* Each card is centered on .spread's own center point via negative margins
+   (card is 160x224, DigitCard.module.css) — the fan's x/rotate/y keyframes
+   (NotFoundContent.tsx) all animate relative to that shared anchor. */
+.cardSlot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -112px;
+  margin-left: -80px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  opacity: 0.8;
+}
+
+.notFoundHeading {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: clamp(20px, 3vw, 32px);
+  color: var(--tagline-color);
+  margin: 0;
+}
+
+/* Matches AboutContent.module.css's .subheading recipe (scaled-up
+   TableHeader tagline treatment). */
+.instruction {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tagline-color);
+  opacity: 0.65;
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .content {
+    gap: 16px;
+    padding: 32px 20px;
+  }
+
+  .bustHeading {
+    font-size: clamp(90px, 30vw, 200px);
+  }
+
+  /* Same ~72% fraction of .bustHeading's font-size clamp as the desktop
+     value above, recomputed for this breakpoint's own clamp range — keeps
+     the same proportion of "Bust!" visible above the cards at every width. */
+  .bustBlock {
+    padding-top: clamp(65px, 22vw, 145px);
+  }
+
+  /* The fan keeps its desktop bow shape at every viewport width — unlike
+     Experience Card (Design System §3.10), which swaps to a different
+     mobile peek-stack layout — it just scales down to fit narrow screens.
+     Real dimensions (matching DigitCard.module.css's mobile card size and
+     NotFoundContent.tsx's mobile-scaled xStepPx/liftPx), not a CSS
+     transform: a transform-scaled box keeps its full desktop layout height
+     reserved, which put "Bust!" (positioned off .bustBlock's flow height)
+     in the wrong place relative to the visually-shrunk cards (verified
+     live). */
+  .spread {
+    width: 300px;
+    height: 210px;
+  }
+
+  .cardSlot {
+    margin-top: -77px;
+    margin-left: -55px;
+  }
+}

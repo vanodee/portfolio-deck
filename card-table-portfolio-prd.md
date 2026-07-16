@@ -1,8 +1,8 @@
 # PRD: Card Table Portfolio (Prototype Phase)
 
-**Status:** Draft v16 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection)
+**Status:** Draft v17 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection; a 404/Not Found page added (§4.9), net-new, not previously scoped)
 **Owner:** [Your name]
-**Last updated:** July 14, 2026
+**Last updated:** July 16, 2026
 
 ---
 
@@ -116,6 +116,15 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Resolved (Phase 1 build, July 2026):** About's own substantive layout/content is now built — six sections (Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, "Ready to deal?"), per Design System §3.11. Its Email/LinkedIn/X/Resume destinations remain placeholders (`lib/aboutLinks.ts`, tracked in `CHECKLIST.md`).
 - **Resolved (follow-up pass, July 2026):** Hero, The Run, Chips up my sleeve, and Tables I've Played each play a first-visit-only "dealt in" section-reveal on viewport intersection — gated the same way Home's onboarding gate is (a store flag that never resets except a hard reload), and held back until the page-level Home -> About slide-in has settled on a nav-arrival. House Rules and the closing "Ready to deal?" text remain plain copy with no reveal (Design System §3.11/§7 item 18).
 
+### 4.9 404 / Not Found Page
+
+**Resolved (Phase 1 build, July 2026):** a net-new page, not previously scoped anywhere in this document — reached for any URL that doesn't match `/` or `/about` (`app/not-found.tsx`). Reuses the same site-wide chrome as every other route (felt background, play-area frame, table header) rather than a bare error message.
+
+- **Content:** a large, dim "Bust!" (Meow Script, table-level decorative heading per Design System §2.1) with a fan of three cards reading **4, 0, 4** in front of it, sized and spaced so the fan never fully covers the word, and "Page Not Found" (Outfit) beneath — see Design System §3.12 for the full visual/motion spec. The card fan's shape and entrance motion deliberately mirror the About page's Experience Card ("The Run") rather than introducing a new look.
+- **Getting back:** no separate "return home" link/button — the card-spread itself is the click target (the whole fan, not just the individual cards), with a short instruction line telling visitors to click the cards. The cards also play a continuous ambient deal-in/hold/deal-out loop, independent of the click affordance.
+- **Control dock:** doesn't render at all on this page — not even a reduced state. Clicking the card spread lands directly on Home's own onboarding gate, which has no dock either, so there's nothing for it to usefully show in between.
+- **No connection to the Home <-> About route-transition system:** a 404 is only ever reached via a hard/broken link, never the in-app dock toggle, so it doesn't participate in `dockNavPhase`/the deck-exit or About-content-exit choreography (§4.8) — it has its own independent, self-contained entrance instead.
+
 ---
 
 ## 5. Technical Approach
@@ -125,7 +134,7 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Rendering split:**
   - WebGL layer (React Three Fiber + Drei): owns the table surface, lighting/shadows, and all card meshes in closed/idle/flipping/scaling states.
   - DOM layer: a sibling fixed-position container that mounts real, scrollable HTML content only once a card finishes opening. Native scroll, real text, no `<Html>`-in-canvas content rendering.
-- **Routing (§4.8):** Next.js App Router, two routes — `/` (table) and `/about`. The table header and play-area frame are hoisted into the root layout so they persist across both without remounting; their Home-specific contents (heading, card grid, WebGL canvas) are gated to the `/` route (`usePathname()`) so nothing Home-only ever renders on `/about`. The control dock itself is *not* shared — each route mounts its own dock component so the formation/collapse choreography can treat each page boundary as a fresh mount.
+- **Routing (§4.8/§4.9):** Next.js App Router — `/` (table), `/about`, and a catch-all not-found route (`app/not-found.tsx`, §4.9) for anything else. The table header, play-area frame, and control dock are all hoisted into the root layout so they persist across every route without remounting; their Home-specific contents (heading, card grid, WebGL canvas) are gated to the `/` route (`usePathname()`), and the play-area frame's interior content branches three ways (Home / About / not-found) so nothing route-specific bleeds onto another route. *(Correction: an earlier draft of this bullet said the control dock was not shared and remounted per route — that was superseded by Design System §3.6's "Revised" dock-persistence change and no longer reflects the actual implementation.)*
 - **State management:** a single store (e.g., Zustand) holding per-card position/face-state, global cover/reveal state, `openCardId`/phase (`closed | flipping | scaling | open | closing`), and lightweight session data for §4.7 (opened-card set, shuffle count), consumed by both the canvas and the DOM overlay.
 - **Animation:** `@react-spring/three` for in-canvas card motion (flip, scale, deal, shuffle, idle bob, peek); Framer Motion for the DOM overlay's fade/scale entrance.
 - **Content for prototype:** hardcoded/mock array of "project" objects (title, category, date, image, body content, back styling, flagship flag) — shaped loosely like the eventual Sanity schema so the future data-swap is low-friction, but with zero actual CMS dependency.
@@ -199,6 +208,7 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **About panel treatment:** resolved as its own route (`/about`), not the card-open DOM overlay pattern — see §4.8. Routing architecture is built and functioning.
 - **About page content:** the page's own section layout and copy are now built (§4.8, Design System §3.11) — Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, and a closing "Ready to deal?" text, using all four previously-unplaced building blocks: Chip (`components/dom/Chip.tsx`, Design System §3.7), Brand Card (`components/dom/BrandCard.tsx`, Design System §3.8), Photo Card (`components/dom/PhotoCard.tsx`/`PhotoCardSpread.tsx`, Design System §3.9), and Experience Card (`components/dom/ExperienceCard.tsx`/`ExperienceCardSpread.tsx`, Design System §3.10).
 - **Control dock on mobile:** below 767px the dock restacks into a centered vertical column (logo, left group, right group) rather than staying a horizontal pill with no room left to shrink — see Design System §3.3 for the exact layout.
+- **404 / Not Found page:** not previously scoped in this document — a net-new page is now built, reusing the site-wide chrome (felt, play-area frame, header) with its own "Bust!"/4-0-4 card fan content; the control dock doesn't render on this route at all (§4.9, Design System §3.3/§3.12).
 
 ### Still open
 

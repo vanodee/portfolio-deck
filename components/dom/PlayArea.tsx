@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { useIsNotFoundRoute } from "@/hooks/useIsNotFoundRoute";
 import { useShowTableContent } from "@/hooks/useShowTableContent";
 import { getLayout, type FrameRect } from "@/lib/layout";
 import { MOTION } from "@/lib/motion";
@@ -11,6 +12,7 @@ import { useTableStore } from "@/store/useTableStore";
 import TableCanvas from "@/components/canvas/TableCanvas";
 import A11yCardButtons from "./A11yCardButtons";
 import AboutContent from "./AboutContent";
+import NotFoundContent from "./NotFoundContent";
 import PickACardHeading from "./PickACardHeading";
 import styles from "./PlayArea.module.css";
 
@@ -30,13 +32,15 @@ export default function PlayArea() {
   // frameRect/scroll snapshot Card.tsx uses to escape to the reading view
   // never goes stale mid-animation (see contentPanOffset in lib/layout.ts).
   const scrollLocked = useTableStore((s) => s.openCardId !== null);
-  // This component persists across the Home <-> About route change
-  // (app/layout.tsx) — the frame/border chrome below is always rendered,
-  // but its Home-only content (heading, card grid, canvas) is gated to the
-  // "/" route so nothing Home-specific bleeds onto About, which renders its
-  // own content (AboutContent.tsx) in the branch below instead.
+  // This component persists across every route change (app/layout.tsx) —
+  // the frame/border chrome below is always rendered, but its Home-only
+  // content (heading, card grid, canvas) is gated to the "/" route so
+  // nothing Home-specific bleeds onto About or the 404 route, which render
+  // their own content (AboutContent.tsx / NotFoundContent.tsx) in the
+  // branches below instead.
   const pathname = usePathname();
   const onHome = pathname === "/";
+  const notFound = useIsNotFoundRoute();
   // Dashed border stays invisible through Home's own onboarding gate,
   // fading in once the deck is clicked (appPhase leaves "onboarding") —
   // alpha-only, so the frame's own geometry/scroll-boundary role never
@@ -248,7 +252,8 @@ export default function PlayArea() {
             )}
           </>
         )}
-        {!onHome && <AboutContent />}
+        {!onHome && !notFound && <AboutContent />}
+        {notFound && <NotFoundContent />}
       </div>
     </div>
   );

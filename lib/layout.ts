@@ -5,13 +5,9 @@
 // native scrollport, and Card.tsx converts content-local positions into true
 // full-viewport world coordinates via contentPanOffset() on every frame.
 
-import { PROJECTS } from "@/data/projects";
-
 export type Breakpoint = "desktop" | "mobile";
 
 export const MOBILE_BREAKPOINT = 767;
-
-export const CARD_COUNT = PROJECTS.length;
 
 // DS §3.1 / §4.1
 export const DESKTOP = {
@@ -64,7 +60,7 @@ export interface CardLayout {
 export interface TableLayout {
   cardW: number;
   cardH: number;
-  positions: CardLayout[]; // indexed by gridIndex 0..CARD_COUNT-1
+  positions: CardLayout[]; // indexed by gridIndex 0..cardCount-1
   deck: CardLayout; // entrance-deal origin
   contentWidth: number;
   contentHeight: number;
@@ -81,6 +77,7 @@ export function getLayout(
   breakpoint: Breakpoint,
   contentWidth: number,
   availableHeight: number,
+  cardCount: number,
 ): TableLayout {
   if (breakpoint === "mobile") {
     const { cardW, cardH, gutter, cols, outerPad, topPad, bottomPad } = MOBILE;
@@ -92,13 +89,13 @@ export function getLayout(
     const h = cardH * scale;
     const pitchX = w + gutter;
     const pitchY = h + gutter;
-    const rows = Math.ceil(CARD_COUNT / cols);
+    const rows = Math.ceil(cardCount / cols);
     const contentHeight = topPad + (rows - 1) * pitchY + h + bottomPad;
     const positions: CardLayout[] = [];
-    for (let i = 0; i < CARD_COUNT; i++) {
+    for (let i = 0; i < cardCount; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
-      const inRow = Math.min(cols, CARD_COUNT - row * cols);
+      const inRow = Math.min(cols, cardCount - row * cols);
       const rowW = inRow * pitchX - gutter;
       const rowCenterFromTop = topPad + row * pitchY + h / 2;
       positions.push({
@@ -144,17 +141,17 @@ export function getLayout(
   const h = cardH * scale;
   const stepX = pitchX * scale;
   const stepY = pitchY * scale;
-  const rows = Math.ceil(CARD_COUNT / cols);
+  const rows = Math.ceil(cardCount / cols);
   const contentHeight = topPad + (rows - 1) * stepY + h + bottomPad;
   const positions: CardLayout[] = [];
-  for (let i = 0; i < CARD_COUNT; i++) {
+  for (let i = 0; i < cardCount; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
     // Centers each row independently on its own card count, so a partial
     // last row (fewer than `cols` cards) centers instead of hugging the
     // left edge — identical result to the old fixed formula when the row
     // is full.
-    const inRow = Math.min(cols, CARD_COUNT - row * cols);
+    const inRow = Math.min(cols, cardCount - row * cols);
     const rowW = (inRow - 1) * stepX;
     const rowCenterFromTop = topPad + row * stepY + h / 2;
     positions.push({

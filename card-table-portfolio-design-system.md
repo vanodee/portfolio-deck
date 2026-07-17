@@ -1,8 +1,8 @@
 # Design System: Card Table Portfolio
 
-**Status:** Draft v25 — derived from Figma source file; About page routing/route-transition, the Chip component (from user-provided SVG exports), the Brand Card component (net-new, no Figma source), and the Photo Card / Experience Card components (from Figma, with confirmed deviations — see §3.9/§3.10) added post-Figma; About page section layout (§3.11) added post-Figma, structure/content only; Photo Card spread hover interaction (§3.9) and tool/brand grid flex-wrap layout (§3.11) added post-Figma; control dock revised (§3.3/§3.6) to persist as a single site-wide instance instead of remounting/re-forming per route; the dock's About/Back-to-Home buttons replaced with a single sliding `DockToggle` switch (§3.3/§6); control dock made responsive below 767px, restacking into a vertical column (§3.3); table grid (§4.1) now falls back from 4 to 3 columns instead of shrinking below 3-column mobile sizing, and mobile bottom padding (§4.2) increased so the stacked dock no longer covers the last card row — both found via a responsive audit, not Figma-derived; About page responsive audit follow-up (§3.8/§3.10/§3.11, §7 items 12-17) — Brand Card gains a mobile size reduction for a 2-column grid, Experience Card's text is now top-left-anchored with two responsive spread variants (narrowed fan / mobile peek-stack) replacing the original single fixed fan, the fan continuously scales to its measured available width (both axes' rotation overhang accounted for) instead of staying fixed-size, the mobile peek-stack reveals enough of each card for its full text plus a stronger stacked-card shadow, Hero gained its own 920px stacking breakpoint, and two more shrink-wrap/dock-clearance bugs (mirroring the table-grid ones above) were fixed on `/about`; AboutContent now has its own Home <-> About route-transition motion (§3.6/§6) — translates in from the right on arrival, translates out to the right before navigating back; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography (§3.11/§6), revised to deal in strictly one item at a time (no overlap) with a `.runSpreadWrap` scrollbar fix; a 404/Not Found page added (§3.3/§3.12/§6), net-new — no Figma source, not previously specced in either doc
+**Status:** Draft v31 — derived from Figma source file; About page routing/route-transition, the Chip component (from user-provided SVG exports), the Brand Card component (net-new, no Figma source), and the Photo Card / Experience Card components (from Figma, with confirmed deviations — see §3.9/§3.10) added post-Figma; About page section layout (§3.11) added post-Figma, structure/content only; Photo Card spread hover interaction (§3.9) and tool/brand grid flex-wrap layout (§3.11) added post-Figma; control dock revised (§3.3/§3.6) to persist as a single site-wide instance instead of remounting/re-forming per route; the dock's About/Back-to-Home buttons replaced with a single sliding `DockToggle` switch (§3.3/§6); control dock made responsive below 767px, restacking into a vertical column (§3.3); table grid (§4.1) now falls back from 4 to 3 columns instead of shrinking below 3-column mobile sizing, and mobile bottom padding (§4.2) increased so the stacked dock no longer covers the last card row — both found via a responsive audit, not Figma-derived; About page responsive audit follow-up (§3.8/§3.10/§3.11, §7 items 12-17) — Brand Card gains a mobile size reduction for a 2-column grid, Experience Card's text is now top-left-anchored with two responsive spread variants (narrowed fan / mobile peek-stack) replacing the original single fixed fan, the fan continuously scales to its measured available width (both axes' rotation overhang accounted for) instead of staying fixed-size, the mobile peek-stack reveals enough of each card for its full text plus a stronger stacked-card shadow, Hero gained its own 920px stacking breakpoint, and two more shrink-wrap/dock-clearance bugs (mirroring the table-grid ones above) were fixed on `/about`; AboutContent now has its own Home <-> About route-transition motion (§3.6/§6) — translates in from the right on arrival, translates out to the right before navigating back; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography (§3.11/§6), revised to deal in strictly one item at a time (no overlap) with a `.runSpreadWrap` scrollbar fix; a 404/Not Found page added (§3.3/§3.12/§6), net-new — no Figma source, not previously specced in either doc; card front's fill color and real-image cropping resolved for the Sanity CMS integration (§3.2, §7 item 23) — previewColor sources the frame fill, hotspot/focal-point cropping deferred to a plain center-crop; card front's `date` field dropped entirely for the CMS integration (§3.2, §7 item 24) — no equivalent Sanity field exists, so the micro-label is now category-only; refined once real content was flowing (§3.2, §7 item 24) — title now wraps up to 2 lines (ellipsis beyond that) respecting the same 8px padding on both sides instead of overflowing unbounded, the category micro-label bumped 7px → 11px (every real category name still fits on one line), and the card-front image source switched from `heroImage` to `previewImage` per `SCHEMA.md` §3b's intended grid/listing field, reserving `heroImage` for the expanded project page; reading pane's hero/overview/closing content shell added (§3.13), net-new for the Sanity CMS integration Phase 6 — per-project theming via 4 inline CSS custom properties (plus a 5th, local to each tool pill), structure ported from `PROJECT_PAGE_LAYOUT.md` §5/§6 with every value re-derived from this project's own tokens; reading-pane hero/closing images revised to a fixed-height crop box (§3.13) so every project renders at the same height regardless of source aspect ratio, and the category pill restacked above the title instead of inline with it; reading pane's category-specific body vocabulary added (§3.14), net-new for the Sanity CMS integration Phase 7 — 9 shared pattern components (TextImageRow, SoloTextContainer, SoloImageContainer/MediaGallery, InfoCardGrid/SoloInfoCard, PortraitImageGrid, DividerSection, LiveLinkRow) composed by all 4 category bodies, live-link responsive breakpoints (1024px/450px/320px) introduced, tag/tool pill colors re-derived from this app's own tokens rather than copied from the reference
 **Source:** [Portfolio Deck](https://www.figma.com/design/8ENJvHnX9pC73D9qUn7SN6/Portfolio-Deck) (node `1:2408`, "Main Elements")
-**Last updated:** July 16, 2026
+**Last updated:** July 17, 2026
 
 This document captures only what's confirmed — either extracted directly from the Figma file or explicitly stated. Anything not listed here is still open.
 
@@ -122,10 +122,19 @@ Note: Light appears once (category/date micro-label) despite the "Regular/Medium
 - Center mark: logo monogram, 50×46px, centered
 
 ### 3.2 Card Front
-- Frame: 214×300px, 8px padding, 4px outer corner radius, white fill
+- Frame: 214×300px, 8px padding, 4px outer corner radius, fill sourced from the project's Sanity `previewColor` field (resolved, July 2026) — white is the current mock-data default, not a fixed spec value. `projectColor`/`projectColorDark`/`ctaColor` have no card-front role; they theme the reading-pane overlay only (§6/Phase 6 of the CMS integration), matching the reference site's project-detail-only usage of those three.
 - Image block: bleeds past the card's left/right edges (−54px each side) and top (−10px), aspect ratio 1153:634 — the photo intentionally overflows the card boundary rather than sitting inset
   - *Implementation note (Phase 1):* on the WebGL card a texture cannot paint outside the mesh, so the bleed is reproduced as an oversized crop clipped at the card silhouette — same composition, no literal overflow. If literal overflow is ever required, it needs a separate oversized image plane.
-- Text block: anchored bottom, 127px tall, 18px top / 8px bottom / 8px side padding
+  - *Implementation note (Phase 4, CMS integration):* the real image is drawn center-cropped ("object-fit: cover," no offset) into this box regardless of source aspect ratio. Sanity's hotspot/focal-point metadata is deliberately ignored for now — first-pass decision, not permanent; revisit if real images crop badly against the card's fixed aspect box.
+  - *Implementation note (revised after Phase 5):* sourced from Sanity's `previewImage` field, not `heroImage` — `SCHEMA.md` §3b documents `previewImage` as the field meant for grid/listing use; `heroImage` is reserved for the expanded project page (Phase 6/7).
+- Text block: anchored bottom, 127px tall, 18px top / 8px bottom / 8px side padding (both sides —
+  title wraps at the right padding rather than overflowing)
+  - Two lines max: title (20px Medium, wraps up to 2 lines, ellipsis-truncated beyond that), then a
+    category-only micro-label (11px Light, uppercase, 2.4px tracking, always one line — every real
+    category name fits comfortably at this size). Micro-label originally showed "category - date";
+    `date` dropped entirely (no equivalent field exists in the real Sanity schema, decided out of
+    scope rather than deferred), then bumped 6px → 7px → 11px across two passes as real content
+    made clear the line had room to spare.
 - Watermark: logo mark at 5% opacity, 106×98px, sits behind the text block
 
 ### 3.3 Control Dock
@@ -274,6 +283,95 @@ Motion tokens for the deck/heading exit live in `MOTION.tableNav`, and About's o
 - **Control dock:** does not render on this route at all (§3.3) — not a compact/reduced state, simply absent.
 - **Entrance:** a single self-contained fade + upward-translate on mount (`MOTION.notFound.entranceDuration`/`entranceTranslateY`, §6) — deliberately independent of the Home <-> About route-transition choreography (`dockNavPhase`, §3.6): a 404 is only ever reached via a hard/broken link, never the in-app dock toggle, so there's no matching "exit" transition on the other end to coordinate with. A direct load renders the entrance once on mount, same as any other route.
 
+### 3.13 Reading Pane Content (hero / overview / closing shell)
+
+**Resolved (Sanity CMS integration Phase 6, July 2026):** the reading pane (`OpenCardOverlay`,
+PRD §4.5, pane geometry/crossfade mechanics at DS §5) previously rendered flat title/category/body
+text with no real content structure. Structural reference: `public/cms/PROJECT_PAGE_LAYOUT.md` §5/§6
+— ported as *structure only* (DOM shape, conditional-rendering rules, which fields go where); every
+pixel/hex/rem value re-derived from this project's own tokens, never copied verbatim (its §3 page-
+chrome resets — body background, `main` reset, global `h1-h6` reset — were confirmed pure chrome and
+explicitly not ported at all; this app already owns its own page shell).
+
+- **Per-project theming:** 4 inline CSS custom properties set on the pane root —
+  `--projectBgColor`/`--projectColor`/`--projectColorDark`/`--projectCtaColor`, sourced from Sanity's
+  `previewColor`/`projectColor`/`projectColorDark`/`ctaColor` — plus a 5th, `--toolColor`, scoped
+  locally per tool pill from the `tools` document's own `color` field. Fetched eagerly at listing
+  time (not the lazy per-card detail fetch) specifically so the pane's colors are present from the
+  instant it opens, no color-pop.
+- **Hero:** full-bleed hero image first (`object-fit: cover` inside a **fixed-height** crop box —
+  500px desktop, 360px ≤768px, 240px ≤590px — every project renders at the same height regardless of
+  its own image's aspect ratio, tucked behind the sticky close button via a `-52px` margin trick),
+  then category pill (bg `--projectColor`, white text) **stacked above** the title as its own block
+  (revised from an initial inline "category — title" treatment in the same `<h1>` — deviates from the
+  reference's inline pattern, a deliberate call, not a structural constraint) — title alone in `<h1>`
+  (34px/500, this project's pre-existing reading-pane title size, not the reference's 2.441rem Figma
+  value), conditional subheading `<h2>` and description `<p>` (both omitted if empty — the reference
+  doc is silent on this, but rendering visibly-empty text is never correct). No hotspot/focal-point
+  cropping (deferred, same precedent as the card-front image, §3.2). The closing image reuses the
+  exact same fixed-height crop-box treatment (a shared `.imageBlock` base class) — both share the
+  ArtBlock placeholder canvas's sizing logic too (reads its own container's rendered height rather
+  than a fixed aspect ratio), so there's no height jump when the real image finishes loading in.
+- **Overview:** one `.customSection` (the padding/gap "rhythm device" the reference reuses throughout
+  every category body too, Phase 7) holding, in order: a conditional tags row (pill chips —
+  `rgba(28,28,28,0.08)`, matching this pane's own `.close` button treatment, not the reference's
+  unthemed static `#CCCCCC`), a conditional quick-stats grid (3 columns desktop / 2 at ≤590px, each
+  stat left-bordered in `--projectColor`), and a conditional tools row (also left-bordered in
+  `--projectColor`; each tool pill bg'd in its own `--toolColor` with dark text — light pastel tool
+  colors made white text unreadable, caught via visual verification against real data).
+- **Closing:** the same hero-image markup reused a second time with `closingImage`, omitted entirely
+  (no placeholder) if absent — unlike the hero position, there's no flip/crossfade continuity need to
+  preserve at the bottom of a scrollable pane.
+- **Category-specific body** (`PROJECT_PAGE_LAYOUT.md` §7/§9) is explicitly **not** part of this
+  section — it inserts between Overview and Closing, per §3.14.
+- **Breakpoints:** only 768px and 590px are used within the shell itself — §3.14's pattern vocabulary
+  introduces the other 3 (1024px/450px/320px, live-link responsive rules only).
+- **Typography:** headings use this app's default UI face (Outfit), not its decorative script face
+  (`--font-script`/Meow Script) — project titles are arbitrary real content needing legibility, unlike
+  the app's intentional one-off script moments ("Pick a Card," "Hello!").
+
+### 3.14 Reading Pane Category-Specific Body Patterns
+
+**Resolved (Sanity CMS integration Phase 7, July 2026):** the category-body content that slots
+between Overview and the closing image (§3.13), per `PROJECT_PAGE_LAYOUT.md` §7 (pattern vocabulary)
+and §9 (per-category section order). One shared component library
+(`components/dom/ProjectBody/`), not 4 independent renderers — every category composes the same 9
+pattern primitives, matching the reference's own one-vocabulary-four-bodies structure.
+
+- **`TextImageRow`** — heading/body/bullet-list paired with media, `reverse` flips desktop layout
+  (image left vs. right); both variants collapse to `column-reverse` ≤768px.
+- **`SoloTextContainer`** — heading/body/bullet-list, no paired media (the "section intro" primitive
+  nearly every section opens with).
+- **`SoloImageContainer`** / **`MediaGallery`** — full-width gallery items at natural aspect ratio (no
+  crop, unlike the hero/closing's fixed-height cover-crop) — `MediaGallery` positionally pairs
+  parallel images/videos/videoPosters arrays, one `SoloImageContainer` per index.
+- **`InfoCardGrid`** / **`SoloInfoCard`** — 2- or 3-col card grid (collapses to 2 ≤768px, 1 ≤590px),
+  optionally numbered (`{index+1}`) instead of titled; `SoloInfoCard` is the same card styling
+  standalone, left-aligned instead of centered.
+- **`PortraitImageGrid`** — 3-col portrait grid, `object-fit: contain` (not `cover` — full designs
+  stay uncropped), Logos & Branding Core Sections only. Images and videos render as two independently
+  -gated passes, not interleaved.
+- **`DividerSection`** — full-bleed media with a dark overlay and centered white heading, UX Case
+  Studies' 4 chapter breaks only (Research/Ideation/Visual Design/Final Thoughts).
+- **`LiveLinkRow`** — CTA button row, icon resolved from `public/assets/icons/{ctaIcon}LinkIcon.svg`
+  (this app's asset path, not the reference's bare-root one), themed via `--projectCtaColor`. Absent
+  entirely from Logos & Branding (confirmed — the only one of the 4 categories with no live links).
+- **Section rhythm** — light/dark alternation via a shared `Section` component, reusing the padding/
+  gap recipe already established for Overview (§3.13).
+- **Media recipe** — video always wins over image when both are populated for a slot; `next/image`
+  at hardcoded 1920×1080 (landscape) / 1080×1920 (portrait grid only), aspect enforced by container
+  CSS, not real asset metadata — matches the reference's own approach exactly.
+- **Breakpoints introduced here**: 1024px (live-link row stacks to column), 450px (live-link button
+  goes full-width), 320px (live-link icon hidden) — live-links are the only pattern in this
+  vocabulary that needs tiers beyond 768px/590px.
+- **Alt text**: a single generic fallback per image (built from the section heading), not a real
+  per-field CMS-sourced alt — a deliberate scope reduction from the reference's ~150 hand-fetched
+  fallback strings; a clean, isolated follow-up if wanted later.
+- **Colors re-derived, not copied**: tag pills use this app's existing `rgba(28,28,28,0.08)` chip
+  treatment (not the reference's unthemed `#CCCCCC`); tool pills use dark text (`--card-front-text`)
+  rather than white — real tool colors turned out to be light pastels, confirmed via live-data
+  verification, where white text was unreadable.
+
 ---
 
 ## 4. Layout
@@ -378,6 +476,8 @@ Resolved during the Phase 1 build (July 2026):
 17. **"The Run" fan clipped vertically + mobile stack text got cut off (§3.10)** — item 16's scale fix only compensated the horizontal rotation overhang, so the fan's bottom edge still clipped (with both a horizontal and vertical `.runSpreadWrap` scrollbar) at the same widths; separately, the mobile peek-stack's `revealPx` (135px) still cut off the last line of longer title+company combinations. Resolved: the scale calculation now computes every card's true rotated bounding box on both axes (not an approximation for one axis); `revealPx` raised to 160px and `ExperienceCard`'s top padding trimmed 32px->24px, both set from a live measurement of the longest real entry rather than estimated; mobile stack cards also gained a stronger, mostly-downward shadow (`elevated` prop) so the stacking reads clearly against the near-white card-on-card background.
 18. **About page section entrance/scroll choreography, partially (§3.11/§6)** — Hero, The Run, Chips up my sleeve, and Tables I've Played now play a first-visit-only "dealt in" stagger on viewport intersection, gated the same way Home's onboarding gate is (a store field that never resets except a hard reload). House Rules and the closing "Ready to deal?" text remain plain copy with no reveal — see item 19 below for what's still open.
 22. **404 / Not Found page (§3.12)** — a net-new page (`app/not-found.tsx`), not previously specced in either doc: a giant, dim "Bust!" (Meow Script) with a looping 4/0/4 card fan in front of it (click-anywhere-to-return-home) — sized and gapped so the fan never fully covers the word — and "Page Not Found" (Outfit) beneath. The card fan's geometry and entrance motion are a deliberate mirror of Experience Card's desktop bow shape and section-reveal entrance (§3.10/§3.11), not a new recipe. The control dock doesn't render on this route at all (§3.3). Structure, layout, and the loop/entrance/click-to-navigate behavior are built and functioning.
+23. **Card-front per-project color theming (§3.2, CMS integration Phase 4)** — previously undocumented and genuinely unresolved (neither this doc nor the PRD mentioned Sanity's 4 project color fields at all). Resolved: `previewColor` sources the card frame's fill; `projectColor`/`projectColorDark`/`ctaColor` are out of scope for the card front entirely, reserved for the reading-pane overlay's per-project theming instead. Also resolved in the same pass: real hero images are center-cropped into the existing image block (no hotspot/focal-point support yet — deliberate first-pass scope cut, not a gap).
+24. **Card-front `date` field (§3.2, CMS integration Phase 5)** — the mock `date` value ("May 2025," etc.) has no equivalent anywhere in the real Sanity schema. Resolved: dropped entirely, not deferred — the card-front micro-label and the reading-pane's meta line both show category only now. The micro-label's font bumped 6px → 7px in the same pass, since the line no longer needs to fit a "- date" suffix. **Refined after real data landed**: title wrapping was added (up to 2 lines, ellipsis-truncated beyond that, respecting the same 8px padding on both sides — it previously ran unbounded past the right padding), the category micro-label bumped again to 11px, and the card-front image source switched from `heroImage` to `previewImage` (the field `SCHEMA.md` §3b actually documents for grid/listing use — `heroImage` is reserved for the expanded project page, Phase 6/7).
 
 Still open:
 

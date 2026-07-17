@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { PROJECTS } from "@/data/projects";
-import { CARD_COUNT } from "@/lib/layout";
+import type { Project } from "@/data/types";
 
 export type CardPhase =
   | "dealing"
@@ -56,6 +55,10 @@ export type AppPhase = "onboarding" | "dealing" | "table";
 export type DockNavPhase = "idle" | "collapsing" | "expanding";
 
 interface TableStore {
+  /** Live-fetched project data (lib/getProjects.ts), threaded in once at
+   * hydration via hydrateProjects. Empty until the root layout's server
+   * fetch resolves and ProjectsHydrator calls it. */
+  projects: Project[];
   cards: Record<string, CardState>;
   cardOrder: string[]; // stable render order (project order)
 
@@ -77,6 +80,10 @@ interface TableStore {
   // needs to react to an in-progress intermediate state, only "has it
   // happened yet."
   aboutSectionsRevealed: boolean;
+
+  /** Populates projects/cards/cardOrder from a resolved fetch. Guarded
+   * no-op if already hydrated (safe against Strict Mode's double-invoke). */
+  hydrateProjects: (projects: Project[]) => void;
 
   /** onboarding -> dealing, guarded no-op once already past onboarding. */
   startDealing: () => void;
@@ -111,10 +118,13 @@ interface TableStore {
   markAboutSectionsRevealed: () => void;
 }
 
-function initialCards(): { cards: Record<string, CardState>; order: string[] } {
+function initialCards(projects: Project[]): {
+  cards: Record<string, CardState>;
+  order: string[];
+} {
   const cards: Record<string, CardState> = {};
   const order: string[] = [];
-  PROJECTS.forEach((p, i) => {
+  projects.forEach((p, i) => {
     cards[p.id] = { id: p.id, gridIndex: i, faceUp: false, phase: "dealing" };
     order.push(p.id);
   });
@@ -136,11 +146,10 @@ function derangement(indices: number[]): number[] {
   return indices.map((_, i) => indices[(i + 1) % n]);
 }
 
-const init = initialCards();
-
 export const useTableStore = create<TableStore>()((set, get) => ({
-  cards: init.cards,
-  cardOrder: init.order,
+  projects: [],
+  cards: {},
+  cardOrder: [],
 
   appPhase: "onboarding",
   dealComplete: false,
@@ -153,6 +162,12 @@ export const useTableStore = create<TableStore>()((set, get) => ({
 
   dockNavPhase: "idle",
   aboutSectionsRevealed: false,
+
+  hydrateProjects: (projects) => {
+    if (get().cardOrder.length > 0) return;
+    const init = initialCards(projects);
+    set({ projects, cards: init.cards, cardOrder: init.order });
+  },
 
   startDealing: () => {
     if (get().appPhase !== "onboarding") return;
@@ -260,5 +275,3 @@ export const useTableStore = create<TableStore>()((set, get) => ({
     set({ aboutSectionsRevealed: true });
   },
 }));
-
-export const TOTAL_CARDS = CARD_COUNT;

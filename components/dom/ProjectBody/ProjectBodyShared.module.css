@@ -1,0 +1,332 @@
+/* Shared pattern vocabulary for the 4 category-body renderers, per
+   PROJECT_PAGE_LAYOUT.md §7. One stylesheet for the whole vocabulary — it's
+   one cohesive component library, not 9 unrelated components. Every
+   pixel/color value here is re-derived from this project's own tokens and
+   OpenCardOverlay's already-established rhythm, never copied verbatim from
+   the reference's Figma/rem values. */
+
+/* Section rhythm — same padding/gap recipe as OpenCardOverlay's
+   .customSection (Overview), anticipated there as reused here. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 40px;
+}
+
+.sectionDark {
+  composes: section;
+  background: var(--projectColorDark, var(--card-front-text));
+  color: #fff;
+}
+
+/* Chapter divider (UX Case Studies only) */
+.dividerImageContainer {
+  position: relative;
+  width: 100%;
+  max-height: 350px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.dividerImageContainer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.dividerImageContainer h2 {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  padding: 0 20px;
+  margin: 0;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Text + paired media row */
+.textImageRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.textImageRow.reverse {
+  flex-direction: row-reverse;
+}
+
+.textContainer {
+  flex: 1 1 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textContainer h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.textContainer p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.rowImageContainer {
+  flex: 1 1 50%;
+  max-height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Heading + body with no paired media */
+.soloTextContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 50%;
+}
+
+.soloTextContainer h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.soloTextContainer p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.bulletList {
+  padding-left: 24px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Gallery item — full-width, natural aspect ratio (no crop) */
+.soloImageContainer {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mediaAuto {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Fixed-height crop box media (rowImageContainer / dividerImageContainer) */
+.mediaFill {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Info cards */
+.infoCardContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.infoCardContainer.twoCol {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.infoCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 20px;
+  border-radius: 8px;
+  background: var(--card-front-bg);
+  color: var(--projectColorDark, var(--card-front-text));
+  text-align: center;
+}
+
+.infoCard h4 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.infoCard p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.infoCard ul {
+  align-self: stretch;
+  padding-left: 20px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.soloInfoCard {
+  align-items: flex-start;
+  text-align: left;
+}
+
+/* Portrait grid (Logos & Branding Core Sections only) */
+.portraitImageContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.portraitImage {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Live-link CTAs */
+.liveLinkContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 16px;
+  padding: 32px 0;
+  border-top: 1px solid rgba(28, 28, 28, 0.15);
+  border-bottom: 1px solid rgba(28, 28, 28, 0.15);
+}
+
+.liveLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 260px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  background-color: var(--projectCtaColor, var(--card-front-text));
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(3, 15, 10, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.liveLink:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(3, 15, 10, 0.25);
+  filter: brightness(1.1);
+}
+
+@media (hover: none) {
+  .liveLink:hover {
+    transform: none;
+    box-shadow: 0 4px 10px rgba(3, 15, 10, 0.3);
+    filter: none;
+  }
+}
+
+.liveLinkText p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.liveLinkText p + p {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+@media (max-width: 1024px) {
+  .liveLinkContainer {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 24px 24px;
+  }
+  .textImageRow,
+  .textImageRow.reverse {
+    flex-direction: column-reverse;
+  }
+  .textContainer,
+  .rowImageContainer {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .soloTextContainer {
+    width: 100%;
+  }
+  .soloTextContainer h3 {
+    font-size: 20px;
+  }
+  .infoCardContainer,
+  .infoCardContainer.twoCol {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .portraitImageContainer {
+    gap: 12px;
+  }
+  .dividerImageContainer {
+    max-height: 300px;
+  }
+  .dividerImageContainer h2 {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 590px) {
+  .section {
+    padding: 20px 16px;
+    gap: 20px;
+  }
+  .infoCardContainer,
+  .infoCardContainer.twoCol {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .dividerImageContainer {
+    max-height: 200px;
+  }
+  .dividerImageContainer h2 {
+    font-size: 18px;
+  }
+  .liveLinkContainer {
+    padding: 24px 0;
+  }
+}
+
+@media (max-width: 450px) {
+  .liveLink {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 320px) {
+  .liveLinkIcon {
+    display: none;
+  }
+}

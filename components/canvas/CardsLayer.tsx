@@ -2,7 +2,6 @@
 
 import type { RefObject } from "react";
 import { useEffect } from "react";
-import { PROJECTS } from "@/data/projects";
 import {
   armFontBackstop,
   getBackTexture,
@@ -21,30 +20,33 @@ interface CardsLayerProps {
 
 export default function CardsLayer({ layout, frameRect, scrollYRef }: CardsLayerProps) {
   const appPhase = useTableStore((s) => s.appPhase);
+  const projects = useTableStore((s) => s.projects);
 
   useEffect(() => {
-    armFontBackstop(PROJECTS);
+    if (projects.length === 0) return;
+    armFontBackstop(projects);
     // Warms the texture cache ahead of time, so the deck never appears
     // half-loaded mid-animation once it's clicked. The deal itself no longer
     // fires automatically here — it's gated behind the onboarding screen's
     // click (see DeckClickCatcher -> lib/choreography.ts beginDeal), which
     // gives this ample time to resolve before it's ever needed.
-    Promise.all(PROJECTS.flatMap((p) => [getBackTexture(p), getFrontTexture(p)]));
-  }, []);
+    Promise.all(projects.flatMap((p) => [getBackTexture(p), getFrontTexture(p)]));
+  }, [projects]);
 
   return (
     <>
-      {PROJECTS.map((project, i) => (
+      {projects.map((project, i) => (
         <Card
           key={project.id}
           project={project}
           layout={layout}
           stackIndex={i}
+          cardCount={projects.length}
           frameRect={frameRect}
           scrollYRef={scrollYRef}
         />
       ))}
-      {appPhase === "onboarding" && (
+      {appPhase === "onboarding" && projects.length > 0 && (
         <DeckClickCatcher layout={layout} frameRect={frameRect} scrollYRef={scrollYRef} />
       )}
     </>

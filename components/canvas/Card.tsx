@@ -8,7 +8,6 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import type { Project } from "@/data/types";
 import { COLORS, ELEVATION, type ElevationRow } from "@/lib/colors";
 import {
-  CARD_COUNT,
   contentPanOffset,
   getReadingPane,
   onboardingRestY,
@@ -41,6 +40,8 @@ interface CardProps {
   layout: TableLayout;
   /** Stable per-card index — resting z offset so overlaps sort predictably. */
   stackIndex: number;
+  /** Total dealt card count — used for the onboarding-shuffle pile split. */
+  cardCount: number;
   /** Play-area frame's measured screen rect, for content-local → world conversion. */
   frameRect: FrameRect | null;
   /** Live scrollTop of the play area's native scroll proxy (ref, not state). */
@@ -79,6 +80,7 @@ export default function Card({
   project,
   layout,
   stackIndex,
+  cardCount,
   frameRect,
   scrollYRef,
 }: CardProps) {
@@ -315,7 +317,7 @@ export default function Card({
       onboardingShuffleStart: () => {
         onboardingCancelRef.current = false;
         const { deck } = layout;
-        const pileSide = stackIndex < CARD_COUNT / 2 ? -1 : 1;
+        const pileSide = stackIndex < cardCount / 2 ? -1 : 1;
         posApi.start({
           to: async (next) => {
             try {

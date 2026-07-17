@@ -199,12 +199,13 @@ export default function PlayArea() {
   // (e.g. store churn during open/close choreography) would unregister and
   // re-register all 15 handles on every tick, racing choreography calls
   // that read the registry synchronously.
+  const cardCount = useTableStore((s) => s.cardOrder.length);
   const layout = useMemo(
     () =>
       contentWidth != null && availableHeight != null
-        ? getLayout(breakpoint, contentWidth, availableHeight)
+        ? getLayout(breakpoint, contentWidth, availableHeight, cardCount)
         : null,
-    [breakpoint, contentWidth, availableHeight],
+    [breakpoint, contentWidth, availableHeight, cardCount],
   );
 
   const handleScrollForward = (deltaY: number, immediate: boolean) => {

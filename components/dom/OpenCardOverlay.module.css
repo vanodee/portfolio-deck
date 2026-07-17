@@ -9,7 +9,7 @@
   position: fixed;
   z-index: 21;
   left: 50%;
-  background: var(--card-front-bg);
+  background: var(--projectBgColor, var(--card-front-bg));
   color: var(--card-front-text);
   border-radius: 8px 8px 0 0;
   box-shadow: var(--shadow-opened);
@@ -17,6 +17,7 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(28, 28, 28, 0.35) transparent;
+  padding-bottom: 64px;
 }
 
 .pane::-webkit-scrollbar {
@@ -50,29 +51,72 @@
   background: rgba(28, 28, 28, 0.16);
 }
 
-.art {
+/* Fixed-height crop box, shared by the hero image (real <img> or the
+   ArtBlock placeholder canvas — both use .heroImage/.heroImageContainer) and
+   the closing image — every project renders at the same height regardless
+   of its own image's aspect ratio, object-fit: cover doing the cropping. */
+.imageBlock {
   width: 100%;
-  display: block;
+  height: 500px;
+  overflow: hidden;
+}
+
+.heroImageContainer {
+  composes: imageBlock;
   margin-top: -52px; /* sits behind the sticky close button */
 }
 
-.content {
-  padding: 28px 40px 64px;
+.closingImageContainer {
+  composes: imageBlock;
+  margin-top: 8px;
 }
 
-.title {
+.heroImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px 40px 0;
+}
+
+.heroHeading {
   font-size: 34px;
   font-weight: 500;
-  margin-bottom: 6px;
+  line-height: 1.2;
+  margin: 0;
 }
 
-.meta {
+.categoryPill {
+  display: inline-block;
+  align-self: flex-start; /* stacked above the title, not stretched full-width */
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: var(--projectColor, var(--card-front-text));
+  color: #fff;
   font-size: 11px;
-  font-weight: 300;
-  letter-spacing: 2.4px;
+  font-weight: 600;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  opacity: 0.7;
-  margin-bottom: 28px;
+}
+
+.heroSubheading {
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.heroDescription {
+  font-size: 16px;
+  line-height: 1.6;
+  opacity: 0.85;
+  margin: 0;
 }
 
 .body {
@@ -85,11 +129,137 @@
   margin-top: 1em;
 }
 
-@media (max-width: 767px) {
-  .content {
-    padding: 20px 20px 48px;
+.bodyMuted {
+  composes: body;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Overview — the "rhythm device" (padding/gap) reused for the category-body
+   sections a later phase inserts between this and the closing image. */
+.customSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 40px;
+}
+
+.tagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagItem {
+  background: rgba(28, 28, 28, 0.08);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.quickStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 16px;
+  row-gap: 20px;
+}
+
+.quickStatItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 3px solid var(--projectColor, var(--card-front-text));
+}
+
+.statLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.toolsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 12px;
+  border-left: 3px solid var(--projectColor, var(--card-front-text));
+}
+
+.toolsLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+
+.toolSet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toolItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background-color: var(--toolColor, var(--card-front-bg));
+  color: var(--card-front-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toolItem img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .imageBlock {
+    height: 360px;
   }
-  .title {
-    font-size: 26px;
+  .heroText {
+    padding: 24px 24px 0;
+  }
+  .heroHeading {
+    font-size: 28px;
+  }
+  .customSection {
+    padding: 24px 24px;
+  }
+}
+
+@media (max-width: 590px) {
+  .imageBlock {
+    height: 240px;
+  }
+  .heroHeading {
+    font-size: 24px;
+  }
+  .heroSubheading {
+    font-size: 16px;
+  }
+  .heroText {
+    padding: 20px 16px 0;
+  }
+  .customSection {
+    padding: 20px 16px;
+    gap: 20px;
+  }
+  .quickStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tagItem,
+  .toolItem {
+    font-size: 12px;
   }
 }

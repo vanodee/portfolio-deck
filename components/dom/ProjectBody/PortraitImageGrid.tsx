@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AutoplayVideo from "./AutoplayVideo";
 import styles from "./ProjectBodyShared.module.css";
 
 interface PortraitImageGridProps {
@@ -36,19 +37,12 @@ export default function PortraitImageGrid({
         />
       ))}
       {vids.map((src, i) => (
-        <video
+        <AutoplayVideo
           key={`vid-${i}`}
           className={styles.portraitImage}
+          src={src}
           poster={posters[i]}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-        >
-          <source src={src} type="video/mp4" />
-          <source src={src} type="video/webm" />
-        </video>
+        />
       ))}
     </div>
   );

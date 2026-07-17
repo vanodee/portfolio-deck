@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AutoplayVideo from "./AutoplayVideo";
 
 // PROJECT_PAGE_LAYOUT.md §8 — video always wins over image when both are
 // populated for a slot. next/image dimensions are hardcoded (aspect
@@ -16,20 +17,7 @@ interface MediaProps {
 
 export default function Media({ image, video, videoPoster, alt, className }: MediaProps) {
   if (video) {
-    return (
-      <video
-        className={className}
-        poster={videoPoster ?? undefined}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
-      >
-        <source src={video} type="video/mp4" />
-        <source src={video} type="video/webm" />
-      </video>
-    );
+    return <AutoplayVideo src={video} poster={videoPoster} className={className} />;
   }
   if (!image) return null;
   return (

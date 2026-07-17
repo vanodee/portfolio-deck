@@ -21,7 +21,7 @@ import {
   leftSwapButtonVariants,
   leftSwapTransition,
 } from "@/lib/dockChoreography";
-import { ABOUT_LINKS } from "@/lib/aboutLinks";
+import { socialPlatformMeta, socialLinkHref } from "@/lib/socialIcons";
 import { MOTION } from "@/lib/motion";
 import styles from "./ControlDock.module.css";
 import DockButton from "./DockButton";
@@ -76,6 +76,8 @@ export default function ControlDock() {
   const openCardId = useTableStore((s) => s.openCardId);
   const appPhase = useTableStore((s) => s.appPhase);
   const dockNavPhase = useTableStore((s) => s.dockNavPhase);
+  const socialLinks = useTableStore((s) => s.socialLinks);
+  const resumeUrl = useTableStore((s) => s.resumeUrl);
   const locked = onHome && (!dealComplete || openCardId !== null);
 
   // Formed once past Home's onboarding gate; every other route has no
@@ -235,55 +237,29 @@ export default function ControlDock() {
           </>
         ) : (
           <>
-            <motion.div variants={dockButtonVariants}>
-              <motion.div
-                variants={leftSwapButtonVariants}
-                initial={hasSwapped ? "hidden" : false}
-                animate={leftVisible ? "show" : "hidden"}
-                transition={leftSwapTransition(0)}
-              >
-                <DockButton
-                  icon="/assets/icons/email.svg"
-                  label="Email"
-                  disabled={disabledAll}
-                  href={ABOUT_LINKS.email}
-                />
-              </motion.div>
-            </motion.div>
-            <motion.div variants={dockButtonVariants}>
-              <motion.div
-                variants={leftSwapButtonVariants}
-                initial={hasSwapped ? "hidden" : false}
-                animate={leftVisible ? "show" : "hidden"}
-                transition={leftSwapTransition(1)}
-              >
-                <DockButton
-                  icon="/assets/icons/linkedin.svg"
-                  label="LinkedIn"
-                  disabled={disabledAll}
-                  href={ABOUT_LINKS.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              </motion.div>
-            </motion.div>
-            <motion.div variants={dockButtonVariants}>
-              <motion.div
-                variants={leftSwapButtonVariants}
-                initial={hasSwapped ? "hidden" : false}
-                animate={leftVisible ? "show" : "hidden"}
-                transition={leftSwapTransition(2)}
-              >
-                <DockButton
-                  icon="/assets/icons/twitter.svg"
-                  label="X"
-                  disabled={disabledAll}
-                  href={ABOUT_LINKS.twitter}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              </motion.div>
-            </motion.div>
+            {socialLinks.map((link, index) => {
+              const meta = socialPlatformMeta(link.platform);
+              const isEmail = link.platform === "Email";
+              return (
+                <motion.div key={link.platform} variants={dockButtonVariants}>
+                  <motion.div
+                    variants={leftSwapButtonVariants}
+                    initial={hasSwapped ? "hidden" : false}
+                    animate={leftVisible ? "show" : "hidden"}
+                    transition={leftSwapTransition(index)}
+                  >
+                    <DockButton
+                      icon={meta.icon}
+                      label={meta.label}
+                      disabled={disabledAll}
+                      href={socialLinkHref(link)}
+                      target={isEmail ? undefined : "_blank"}
+                      rel={isEmail ? undefined : "noopener noreferrer"}
+                    />
+                  </motion.div>
+                </motion.div>
+              );
+            })}
           </>
         )}
       </motion.div>
@@ -312,7 +288,9 @@ export default function ControlDock() {
             icon="/assets/icons/resume.svg"
             label="Resume"
             disabled={disabledAll}
-            href={ABOUT_LINKS.resume}
+            href={resumeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
           />
         </motion.div>
         <motion.div

@@ -13,6 +13,7 @@ import WebAppsBody from "./ProjectBody/WebAppsBody";
 import WebsitesBody from "./ProjectBody/WebsitesBody";
 import UxCaseStudiesBody from "./ProjectBody/UxCaseStudiesBody";
 import LogosBrandingBody from "./ProjectBody/LogosBrandingBody";
+import { PaneScrollRootContext } from "./ProjectBody/PaneScrollRootContext";
 import styles from "./OpenCardOverlay.module.css";
 
 // The scrollable reading view (PRD §4.5). Mounts once the card mesh has
@@ -59,6 +60,7 @@ export default function OpenCardOverlay() {
 
   const visible = openPhase === "open";
   const project = projects.find((p) => p.id === openCardId);
+  const paneRef = useRef<HTMLDivElement>(null);
 
   // Lazy per-card detail fetch (hero/overview content) — decoupled from the
   // open animation, which only needs the id (never content). A failure here
@@ -117,6 +119,7 @@ export default function OpenCardOverlay() {
           />
           <motion.div
             key="pane"
+            ref={paneRef}
             className={styles.pane}
             style={
               {
@@ -227,18 +230,20 @@ export default function OpenCardOverlay() {
               </div>
             )}
 
-            {detailState.status === "ready" && detailState.detail.category === "Web Apps" && (
-              <WebAppsBody detail={detailState.detail} />
-            )}
-            {detailState.status === "ready" && detailState.detail.category === "Websites" && (
-              <WebsitesBody detail={detailState.detail} />
-            )}
-            {detailState.status === "ready" && detailState.detail.category === "UX Case Studies" && (
-              <UxCaseStudiesBody detail={detailState.detail} />
-            )}
-            {detailState.status === "ready" && detailState.detail.category === "Logos & Branding" && (
-              <LogosBrandingBody detail={detailState.detail} />
-            )}
+            <PaneScrollRootContext.Provider value={paneRef}>
+              {detailState.status === "ready" && detailState.detail.category === "Web Apps" && (
+                <WebAppsBody detail={detailState.detail} />
+              )}
+              {detailState.status === "ready" && detailState.detail.category === "Websites" && (
+                <WebsitesBody detail={detailState.detail} />
+              )}
+              {detailState.status === "ready" && detailState.detail.category === "UX Case Studies" && (
+                <UxCaseStudiesBody detail={detailState.detail} />
+              )}
+              {detailState.status === "ready" && detailState.detail.category === "Logos & Branding" && (
+                <LogosBrandingBody detail={detailState.detail} />
+              )}
+            </PaneScrollRootContext.Provider>
 
             {detailState.status === "ready" && detailState.detail.closingImage && (
               <div className={styles.closingImageContainer}>

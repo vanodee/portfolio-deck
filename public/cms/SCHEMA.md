@@ -248,6 +248,10 @@ Notes for a consumer:
   render in array order, don't re-sort.
 - `clients[].logo` is a real Sanity image asset (unlike the raster PNGs this repo used to hardcode
   in `/public/brandLogos/`) — resolve via `asset->url` same as any other image field.
+- **Card Table Portfolio-specific:** this consumer does not fetch or render `clients[].websiteUrl`
+  — its client card (`BrandCard.tsx`) is already a tap target for a name↔logo reveal toggle, with no
+  slot for a second click-through action. Decided (2026-07-17) to leave the field unconsumed rather
+  than redesign that interaction; the field is a candidate for deprecation from the schema.
 - `socialLinks[].platform` is a free-text string (not an enum), matched against a small set of
   known values (`"Email"`, `"Linkedin"`, `"Twitter"`) by the frontend to map each to its own icon
   (`app/components/Footer/Footer.tsx`'s `socialIconsByPlatform`).

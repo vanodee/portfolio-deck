@@ -421,46 +421,115 @@ Resolve (or explicitly park) before starting the phase that depends on them:
 
 ---
 
-## Phase 8 — Autoplay video performance (hard)
+## Phase 8 — Autoplay video performance (hard) — ✅ Done 2026-07-17
 
-- [ ] Implement IntersectionObserver-based play/pause so only in-viewport videos actually autoplay
+- [x] Implement IntersectionObserver-based play/pause so only in-viewport videos actually autoplay
       — confirmed necessity (autoplay is required), performance mitigations are open to change.
-- [ ] Consider capping simultaneous active decodes / poster-first-then-attach-source pattern for
-      sections with many video slots (teaser galleries, etc.).
-- [ ] Verify autoplay video inside the overlay doesn't fight this app's own WebGL render loop
+      **Done**: new `components/dom/ProjectBody/AutoplayVideo.tsx`, used by both `Media.tsx` (the
+      shared video-priority primitive) and `PortraitImageGrid.tsx` (its own inline videos) — every
+      video slot in every category body now goes through this single component. **Gotcha found and
+      handled**: the reading pane scrolls *internally* (`.pane { overflow-y: auto }`), not the page
+      — `IntersectionObserver`'s default root (the top-level viewport) never changes as the pane
+      scrolls, so every video would report as permanently "intersecting" without an explicit root.
+      Fixed via a new `PaneScrollRootContext` (`PaneScrollRootContext.tsx`), provided by
+      `OpenCardOverlay` with a ref to the pane element, consumed by every `AutoplayVideo` regardless
+      of nesting depth.
+- [x] Consider capping simultaneous active decodes / poster-first-then-attach-source pattern for
+      sections with many video slots (teaser galleries, etc.). **Done, via poster-first**: a video
+      renders with `preload="none"` and no `<source>` children at all (zero network request) until
+      it first scrolls into view (`rootMargin: "200px 0px"` for a small pre-load buffer) — then the
+      source is attached once and never removed, so scrolling back into view later is an instant
+      resume, not a re-buffer. This alone caps concurrent decodes to whatever's actually visible
+      (typically 1–2 videos at any scroll position), so a separate hard-cap mechanism wasn't needed
+      — confirmed via live testing (see verification below) rather than assumed.
+- [x] Verify autoplay video inside the overlay doesn't fight this app's own WebGL render loop
       (canvas keeps animating underneath/behind the modal) — related to, but distinct from, the
-      existing OneDrive/hidden-tab WebGL gotcha already known in this project.
+      existing OneDrive/hidden-tab WebGL gotcha already known in this project. **Verified live**
+      against a real project with real teaser videos (`The Singleton Microsite`): confirmed via
+      direct video-element state inspection (not just visual screenshot) at 3 scroll positions —
+      off-screen videos have zero source/network activity, the in-view video plays
+      (`paused: false, readyState: 4`), scrolling it out of view pauses it without discarding the
+      loaded source, and scrolling back resumes instantly. Zero console/page errors throughout, with
+      the WebGL canvas continuously animating behind the modal the whole time — no conflict found.
 
 ---
 
-## Phase 9 — Revalidation webhook (hard)
+## Phase 9 — Revalidation webhook (hard) — ✅ Code done 2026-07-17, webhook registration pending deployment
 
-- [ ] Build `/api/revalidate` (signature verification via `next-sanity/webhook`'s `parseBody()`,
-      checked against a secret; `revalidateTag(_type, { expire: 0 })` on match).
-- [ ] Define this app's own tag scheme, mirrored per query the same way `FRONTEND_INTEGRATION.md`
-      §2a documents for the reference site.
+- [x] Build `/api/revalidate` (signature verification via `next-sanity/webhook`'s `parseBody()`,
+      checked against a secret; `revalidateTag(_type, { expire: 0 })` on match). **Done**
+      (`app/api/revalidate/route.ts`, this app's first API route — confirmed `ƒ Dynamic` in the
+      build output, as expected for a route handler). **Verified locally** with `@sanity/webhook`'s
+      own `encodeSignatureHeader` (constructs a genuinely valid test signature, not just "doesn't
+      crash"): correctly-signed request → 200 + `revalidateTag` runs clean; wrong secret, tampered
+      payload, and missing signature header all → 401; valid signature with no `_type` → 400.
+- [x] Define this app's own tag scheme, mirrored per query the same way `FRONTEND_INTEGRATION.md`
+      §2a documents for the reference site. **Already correct, no changes needed** — confirmed
+      `lib/getProjects.ts`'s `getProjectListing()` is the only server-side tagged fetch in this app
+      (`["project", "category"]`, set back in Phase 5), matching the reference's tag for the
+      equivalent query. The client-side `getProjectDetail` fetch doesn't participate in Next's Data
+      Cache at all (browser fetch, not server-side `client.fetch` usage), so nothing to tag there.
+      **Grew as expected in Phase 10**: `lib/getSiteSettings.ts`'s `getSiteSettings()`/
+      `getFeaturedTools()` are tagged `["siteSettings"]`/`["tools"]` respectively — the existing
+      `/api/revalidate` handler needed no changes to pick these up, since it already revalidates
+      whatever `_type` the webhook payload names.
 - [ ] **[USER]** Register a new, separate webhook on the shared Sanity project pointed at this
       app's `/api/revalidate` — this coexists independently alongside the old site's existing
       webhook; confirm no conflict, both simply fire independently per document publish.
-- [ ] **[USER]** Provide `SANITY_REVALIDATE_SECRET` for `.env.local` and, later, Vercel.
+      **Deliberately pending deployment** — Sanity's webhook fires from their cloud infrastructure,
+      which cannot reach a local machine at all (not a "swap the URL later" situation, a hard
+      reachability dead end without a tunnel). Register this once a real Vercel URL exists.
+- [x] **[USER]** Provide `SANITY_REVALIDATE_SECRET` for `.env.local` and, later, Vercel. **`.env.local`
+      done** (already present, used directly in this phase's local verification). **Vercel still
+      pending** — same deployment dependency as the webhook registration above.
+
+**Note for whenever deployment happens**: Phase 5 flagged that `npm run build` shows every route as
+fully static-prerendered (`○ Static`), which raised a question of whether `revalidateTag` actually
+busts a statically-generated page or only matters for genuinely dynamic rendering. This should
+resolve itself correctly on Vercel (their on-demand ISR infrastructure honors `revalidateTag` against
+statically-prerendered pages using tagged fetches), but it's a production-platform behavior
+`next dev` can't meaningfully prove either way — worth a real end-to-end check (publish a test edit
+in the Studio, confirm the deployed home page updates without a redeploy) once both the webhook and
+the Vercel secret are actually in place.
 
 ---
 
-## Phase 10 — About page integration (hard, deferred)
+## Phase 10 — About page integration (hard, deferred) — ✅ Done 2026-07-17
 
-- [ ] Map `siteSettings` (`resumeUrl`, `experience`, `clients`, `socialLinks`) and `tools`
+- [x] Map `siteSettings` (`resumeUrl`, `experience`, `clients`, `socialLinks`) and `tools`
       (`isFeatured`) onto this app's existing `data/experience.ts`, brand/"Tables I've Played," and
       `data/tools.ts`-equivalent structures.
-- [ ] Where Sanity's actual shape differs from this app's current mock shape, **Sanity wins** —
-      reshape the app's data model, don't force-fit (confirmed general rule).
-- [ ] Rebuild the `socialLinks[].platform` → icon lookup as a local static-asset map (not CMS data),
-      same pattern as the reference's `socialIconsByPlatform`.
+- [x] Where Sanity's actual shape differs from this app's current mock shape, **Sanity wins** —
+      reshape the app's data model, don't force-fit (confirmed general rule). Applied: renamed
+      `ExperienceCardData.dateRange` → `yearRange` to match the real field name verbatim.
+- [x] Rebuild the `socialLinks[].platform` → icon lookup as a local static-asset map (not CMS data),
+      same pattern as the reference's `socialIconsByPlatform` — `lib/socialIcons.ts`.
 
-**Gotchas**
-- `ToolChipData.logoAlt` (`data/types.ts:59-65`) has no direct Sanity field — alt text lives on the
-  shared `imageWithAlt` wrapper, not a flat field; resolve this mapping when this phase starts.
-- `socialLinks[].url` vs. `.email` are mutually exclusive per item, branch on `platform` to know
-  which to read — never assume `url` is populated.
+**Implementation notes**
+- `AboutContent`/`ControlDock` are hoisted into `app/layout.tsx` (not nested under
+  `app/about/page.tsx`), same architecture as the project grid — so this phase reused the
+  `ProjectsHydrator`/`hydrateProjects` pattern rather than prop-threading: `lib/getSiteSettings.ts`
+  fetches server-side in `app/layout.tsx`, `components/dom/SiteSettingsHydrator.tsx` threads it into
+  new flat `useTableStore` fields (`experience`, `clients`, `tools`, `resumeUrl`, `socialLinks`).
+- Unlike `getProjectListing()` (throws by design), `getSiteSettings()`/`getFeaturedTools()` catch
+  their own errors and degrade to empty defaults — `ControlDock` renders on every route including
+  Home, so a siteSettings fetch failure can't be allowed to take the whole site down.
+- **`clients[].websiteUrl` is deliberately not fetched or consumed.** `BrandCard.tsx`'s whole card is
+  already the tap target for its name↔logo reveal toggle, so there's no space for a second click
+  target without redesigning that interaction — user's call was to leave it unbuilt and deprecate
+  the field in the schema later rather than build UI for it now. `Brand` (`data/types.ts`) has no
+  `websiteUrl` field.
+- `data/experience.ts`, `data/brands.ts`, `data/tools.ts`, `lib/aboutLinks.ts` deleted (mock retired
+  once the real source landed, same precedent as `data/projects.ts` in Phase 5). `data/photos.ts`
+  stays — confirmed no `siteSettings` counterpart for the Hero photo spread.
+
+**Gotchas (resolved)**
+- `ToolChipData.logoAlt` / client logos both had `null` alt text on every live-checked document (no
+  alt authored in the Studio yet) — falls back to `title`/`name` at the mapping layer in
+  `lib/getSiteSettings.ts`. `Brand` itself carries no alt field at all: `BrandCard.tsx`'s logo `<img>`
+  is decorative (`alt=""`), the client name is already the button's accessible label.
+- `socialLinks[].url` vs. `.email` are mutually exclusive per item — `lib/socialIcons.ts`'s
+  `socialLinkHref()` branches on `platform === "Email"`.
 
 ---
 

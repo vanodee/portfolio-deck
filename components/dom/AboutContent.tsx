@@ -7,10 +7,7 @@ import { MOTION } from "@/lib/motion";
 import { openEaseBezierPoints } from "@/lib/easing";
 import { useAboutSectionsGate } from "@/hooks/useAboutSectionsGate";
 import { useSectionReveal } from "@/hooks/useSectionReveal";
-import { BRANDS } from "@/data/brands";
-import { EXPERIENCE } from "@/data/experience";
 import { PHOTOS } from "@/data/photos";
-import { TOOLS } from "@/data/tools";
 import BrandCard from "./BrandCard";
 import Chip from "./Chip";
 import ExperienceCardSpread from "./ExperienceCardSpread";
@@ -27,6 +24,9 @@ import styles from "./AboutContent.module.css";
 // order per public/assets/refereneces/About Page.png.
 export default function AboutContent() {
   const [revealedBrandId, setRevealedBrandId] = useState<string | null>(null);
+  const experience = useTableStore((s) => s.experience);
+  const clients = useTableStore((s) => s.clients);
+  const tools = useTableStore((s) => s.tools);
 
   const { armed, baseDelayMs } = useAboutSectionsGate();
   const { ref: heroRef, triggered: heroTriggered } = useSectionReveal(armed, baseDelayMs);
@@ -112,7 +112,7 @@ export default function AboutContent() {
           <p className={styles.subheading}>Career so far, dealt in order</p>
           <div className={styles.runSpreadWrap}>
             <ExperienceCardSpread
-              experiences={EXPERIENCE}
+              experiences={experience}
               revealArmed={armed}
               revealTriggered={runTriggered}
             />
@@ -146,7 +146,7 @@ export default function AboutContent() {
           <h2 className={styles.sectionHeading}>Chips up my sleeve</h2>
           <p className={styles.subheading}>Tools &amp; stack</p>
           <div className={styles.toolGrid}>
-            {TOOLS.map((tool, index) => (
+            {tools.map((tool, index) => (
               <Chip
                 key={tool.id}
                 variant="tool"
@@ -167,7 +167,7 @@ export default function AboutContent() {
           <h2 className={styles.sectionHeading}>Tables I&apos;ve Played</h2>
           <p className={styles.subheading}>Brands &amp; clients</p>
           <div className={styles.brandGrid}>
-            {BRANDS.map((brand, index) => (
+            {clients.map((brand, index) => (
               <BrandCard
                 key={brand.id}
                 brand={brand}

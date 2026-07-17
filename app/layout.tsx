@@ -4,7 +4,9 @@ import TableHeader from "@/components/dom/TableHeader";
 import PlayArea from "@/components/dom/PlayArea";
 import ControlDock from "@/components/dom/ControlDock";
 import ProjectsHydrator from "@/components/dom/ProjectsHydrator";
+import SiteSettingsHydrator from "@/components/dom/SiteSettingsHydrator";
 import { getProjectListing } from "@/lib/getProjects";
+import { getSiteSettings, getFeaturedTools } from "@/lib/getSiteSettings";
 import "./tokens.css";
 import "./globals.css";
 
@@ -40,7 +42,15 @@ export default async function RootLayout({
   // Deliberately uncaught: the listing is load-bearing (no cards = no
   // functional homepage), so a failure surfaces via app/global-error.tsx
   // rather than degrading silently.
-  const projects = await getProjectListing();
+  // siteSettings/tools failures degrade gracefully (see lib/getSiteSettings.ts)
+  // rather than throwing — ControlDock renders on every route, so a failure
+  // here can't be allowed to take down the whole site the way a listing
+  // failure legitimately does.
+  const [projects, siteSettings, tools] = await Promise.all([
+    getProjectListing(),
+    getSiteSettings(),
+    getFeaturedTools(),
+  ]);
 
   return (
     <html lang="en" className={`${outfit.variable} ${meowScript.variable}`}>
@@ -59,6 +69,7 @@ export default async function RootLayout({
           stacking. */}
       <body>
         <ProjectsHydrator projects={projects} />
+        <SiteSettingsHydrator siteSettings={siteSettings} tools={tools} />
         <PlayArea />
         <TableHeader />
         <ControlDock />

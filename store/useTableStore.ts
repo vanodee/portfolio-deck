@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { Project } from "@/data/types";
+import type { Brand, ExperienceCardData, Project, SocialLink, ToolChipData } from "@/data/types";
+import type { SiteSettingsData } from "@/lib/getSiteSettings";
 
 export type CardPhase =
   | "dealing"
@@ -62,6 +63,24 @@ interface TableStore {
   cards: Record<string, CardState>;
   cardOrder: string[]; // stable render order (project order)
 
+  /** siteSettings/tools data (lib/getSiteSettings.ts), threaded in once at
+   * hydration via hydrateSiteSettings. Empty/placeholder until the root
+   * layout's server fetch resolves and SiteSettingsHydrator calls it —
+   * consumed by AboutContent.tsx (experience/clients/tools) and
+   * ControlDock.tsx (resumeUrl/socialLinks), both of which are hoisted at
+   * the layout level rather than nested under app/about/page.tsx, so this
+   * store (not prop-threading) is how the data reaches them. */
+  experience: ExperienceCardData[];
+  clients: Brand[];
+  tools: ToolChipData[];
+  resumeUrl: string;
+  socialLinks: SocialLink[];
+  /** Guards hydrateSiteSettings against a Strict Mode double-invoke — a
+   * plain length check (as hydrateProjects uses on cardOrder) isn't safe
+   * here since a legitimately-empty siteSettings fetch would look identical
+   * to "not yet hydrated". */
+  siteSettingsHydrated: boolean;
+
   appPhase: AppPhase;
   dealComplete: boolean;
   allRevealed: boolean;
@@ -84,6 +103,11 @@ interface TableStore {
   /** Populates projects/cards/cardOrder from a resolved fetch. Guarded
    * no-op if already hydrated (safe against Strict Mode's double-invoke). */
   hydrateProjects: (projects: Project[]) => void;
+
+  /** Populates experience/clients/tools/resumeUrl/socialLinks from a
+   * resolved siteSettings/tools fetch. Guarded no-op if already hydrated,
+   * same convention as hydrateProjects. */
+  hydrateSiteSettings: (data: SiteSettingsData & { tools: ToolChipData[] }) => void;
 
   /** onboarding -> dealing, guarded no-op once already past onboarding. */
   startDealing: () => void;
@@ -151,6 +175,13 @@ export const useTableStore = create<TableStore>()((set, get) => ({
   cards: {},
   cardOrder: [],
 
+  experience: [],
+  clients: [],
+  tools: [],
+  resumeUrl: "#",
+  socialLinks: [],
+  siteSettingsHydrated: false,
+
   appPhase: "onboarding",
   dealComplete: false,
   allRevealed: false,
@@ -167,6 +198,18 @@ export const useTableStore = create<TableStore>()((set, get) => ({
     if (get().cardOrder.length > 0) return;
     const init = initialCards(projects);
     set({ projects, cards: init.cards, cardOrder: init.order });
+  },
+
+  hydrateSiteSettings: (data) => {
+    if (get().siteSettingsHydrated) return;
+    set({
+      experience: data.experience,
+      clients: data.clients,
+      tools: data.tools,
+      resumeUrl: data.resumeUrl,
+      socialLinks: data.socialLinks,
+      siteSettingsHydrated: true,
+    });
   },
 
   startDealing: () => {

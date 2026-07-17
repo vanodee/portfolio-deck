@@ -1,5 +1,32 @@
 import { groq } from "next-sanity";
 
+// About page / dock singleton (siteSettings) + featured tools (Phase 10).
+// `experience`/`clients` are rendered in raw array order (SCHEMA.md: editorial,
+// not sorted by yearRange) — no `order(...)` clause here on purpose.
+// `clients[].websiteUrl` is deliberately NOT fetched: the field exists in the
+// schema but the frontend has no UI slot for it (BrandCard's whole card is
+// already the tap target for its name<->logo reveal), and the user intends to
+// deprecate the field rather than build one.
+export const siteSettingsQuery = groq`
+  *[_type == "siteSettings"][0]{
+    resumeUrl,
+    experience[]{_key, yearRange, title, company},
+    clients[]{_key, name, "logoUrl": logo.asset->url},
+    socialLinks[]{platform, url, email}
+  }
+`;
+
+// About page "Chips up my sleeve" — only tools flagged for display.
+export const featuredToolsQuery = groq`
+  *[_type == "tools" && isFeatured == true]{
+    _id,
+    title,
+    "logoUrl": icon.asset->url,
+    "logoAlt": icon.alt,
+    color
+  }
+`;
+
 // Light card-listing query for the project grid/deal (PRD Phase 5). Always
 // dereferences category->title, never categoryName (Studio-only convenience
 // field with no integrity guarantee — SCHEMA.md §3a). Uses previewImage, not

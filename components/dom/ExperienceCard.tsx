@@ -21,7 +21,7 @@ export default function ExperienceCard({ experience, elevated = false }: Experie
       <img className={styles.cornerMarkBR} src={CORNER_MARK_SRC} alt="" />
       <div className={styles.content}>
         <div className={styles.text}>
-          <p className={styles.dateRange}>{experience.dateRange}</p>
+          <p className={styles.dateRange}>{experience.yearRange}</p>
           <p className={styles.title}>{experience.title}</p>
           <p className={styles.company}>{experience.company}</p>
         </div>

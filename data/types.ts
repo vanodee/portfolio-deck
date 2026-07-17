@@ -488,8 +488,10 @@ export type ProjectDetail =
   | (ProjectDetailBase & { category: "UX Case Studies" } & UxCaseStudyFields)
   | (ProjectDetailBase & { category: "Logos & Branding" } & LogoBrandingFields);
 
-// Mock brand schema (Tables I've Played section) — shaped like the eventual
-// CMS document so a future data-source swap only touches data/brands.ts.
+// Client/brand schema (Tables I've Played section) — sourced live from
+// siteSettings.clients[] (lib/getSiteSettings.ts). No `websiteUrl`: the
+// schema field exists but is intentionally unconsumed here (see Phase 10
+// notes in public/cms/INTEGRATION_CHECKLIST.md).
 export interface Brand {
   id: string;
   name: string;
@@ -506,23 +508,32 @@ export interface PhotoCardData {
   subtitle: string;
 }
 
-// Mock experience-card schema (About Experience section) — shaped like the
-// eventual CMS document so a future data-source swap only touches
-// data/experience.ts. Spread is capped at 4 cards (most recent roles only —
-// ExperienceCardSpread.tsx enforces the cap).
+// Experience-card schema (About "The Run" section) — sourced live from
+// siteSettings.experience[] (lib/getSiteSettings.ts). Spread is capped at 4
+// cards (most recent roles only — ExperienceCardSpread.tsx enforces the cap).
 export interface ExperienceCardData {
   id: string;
   title: string;
-  dateRange: string;
+  yearRange: string;
   company: string;
 }
 
-// Mock tool-chip schema (About "Chips up my sleeve" section) — shaped like
-// the eventual CMS document so a future data-source swap only touches
-// data/tools.ts. Distinct from Chip.tsx's own local (unexported) prop-typing
-// interface of the same name — this one carries `id` for list-key/data-layer
-// purposes; AboutContent.tsx maps individual fields into <Chip> rather than
-// spreading the whole object.
+// siteSettings.socialLinks[] (SCHEMA.md) — platform is free-text, matched
+// against lib/socialIcons.ts's known set with a generic fallback for any
+// other value. url/email are mutually exclusive in practice: Email links
+// carry `email`, every other platform carries `url`.
+export interface SocialLink {
+  platform: string;
+  url?: string | null;
+  email?: string | null;
+}
+
+// Tool-chip schema (About "Chips up my sleeve" section) — sourced live from
+// the `tools` collection, filtered isFeatured==true (lib/getSiteSettings.ts).
+// Distinct from Chip.tsx's own local (unexported) prop-typing interface of
+// the same name — this one carries `id` for list-key/data-layer purposes;
+// AboutContent.tsx maps individual fields into <Chip> rather than spreading
+// the whole object.
 export interface ToolChipData {
   id: string;
   name: string;

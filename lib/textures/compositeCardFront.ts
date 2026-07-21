@@ -172,7 +172,7 @@ export async function compositeCardFront(
   ctx.beginPath();
   ctx.roundRect(0, 0, w, h, 4 * s);
   ctx.clip();
-  ctx.fillStyle = project.frontBg;
+  ctx.fillStyle = COLORS.cardFrontBg;
   ctx.fillRect(0, 0, w, h);
 
   // Image block (bleed geometry, clipped by the card silhouette). The 8px

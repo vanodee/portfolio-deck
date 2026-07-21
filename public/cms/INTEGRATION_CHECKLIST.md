@@ -126,6 +126,12 @@ Resolve (or explicitly park) before starting the phase that depends on them:
 
 ## Phase 4 — Card front & back texture wiring (medium) — ✅ Done 2026-07-16
 
+**Note (2026-07-22, outside CMS integration scope):** the `previewColor`-sources-card-front-fill
+decision below was reverted in a later, unrelated design pass — card fronts now use a fixed
+`card-front-bg` token for every project again. Not a CMS/data-layer change (the field is simply no
+longer read); see Design System §3.2 / §7 item 23 for the current, authoritative state. Left the
+phase log below as originally written for history.
+
 - [x] Wire `lib/textures/compositeCardFront.ts`'s image block to draw the real `heroImage` into the
       **existing fixed-size image box** (max-height, no overflow — confirmed: every card front
       stays visually consistent regardless of source image aspect ratio), replacing the

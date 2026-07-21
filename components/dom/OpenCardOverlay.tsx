@@ -254,6 +254,12 @@ export default function OpenCardOverlay() {
                 />
               </div>
             )}
+
+            <div className={styles.paneFooter}>
+              <span className={styles.footerName}>STEVANO</span>
+              <span className={styles.footerGlyph} aria-hidden="true" />
+              <span className={styles.footerName}>PETERS</span>
+            </div>
           </motion.div>
         </>
       )}

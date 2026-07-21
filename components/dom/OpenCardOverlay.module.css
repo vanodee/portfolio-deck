@@ -17,7 +17,6 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(28, 28, 28, 0.35) transparent;
-  padding-bottom: 64px;
 }
 
 .pane::-webkit-scrollbar {
@@ -29,6 +28,12 @@
   border-radius: 999px;
 }
 
+/* Rest/hover/press read as the button physically lifting off and settling
+   back onto the page: shadow is y-axis-only (unlike the shared --shadow-*
+   elevation tokens, which carry an x-offset for the table's raking light)
+   so the blur+offset alone sells "rising straight up," paired with a scale
+   bump. Press flattens both back down almost instantly, like DS §6's glass
+   buttons being pushed flat. */
 .close {
   position: sticky;
   top: 16px;
@@ -37,18 +42,32 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: rgba(28, 28, 28, 0.08);
-  color: #1c1c1c;
+  background: var(--card-front-bg);
+  color: var(--card-front-text);
+  box-shadow: 0 4px 8px rgba(3, 15, 10, 0.35);
   font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .close:hover {
-  background: rgba(28, 28, 28, 0.16);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 12px 18px rgba(3, 15, 10, 0.4);
+}
+
+.close:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 4px rgba(3, 15, 10, 0.3);
+  transition: transform 90ms ease, box-shadow 90ms ease;
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--card-front-text);
+  outline-offset: 2px;
 }
 
 /* Fixed-height crop box, shared by the hero image (real <img> or the
@@ -140,7 +159,7 @@
 .customSection {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
   padding: 32px 40px;
 }
 
@@ -223,6 +242,45 @@
   object-fit: contain;
 }
 
+/* Footer wordmark — echoes TableHeader's STEVANO / glyph / PETERS lockup in
+   the design system's darkest grey. Owns the pane's former 64px
+   padding-bottom itself (split evenly top/bottom, was pane's padding-bottom
+   only, line 20) so the lockup sits vertically centered in that reserved
+   band instead of hugging its top edge. The glyph reuses the header's
+   white-on-transparent PNG as a CSS mask (the DOM equivalent of the canvas
+   source-in tinting in lib/textures/tintSvg.ts) so it can render in an
+   arbitrary color via currentColor. */
+.paneFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 40px;
+  color: var(--card-front-text);
+  opacity: 0.55;
+}
+
+.footerName {
+  font-size: 15px;
+  font-weight: 300;
+  letter-spacing: 0.5em;
+  line-height: 1;
+}
+
+.footerGlyph {
+  width: 27px;
+  height: 24px;
+  background-color: currentColor;
+  mask-image: url("/assets/logo-mark.png");
+  -webkit-mask-image: url("/assets/logo-mark.png");
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+}
+
 @media (max-width: 768px) {
   .imageBlock {
     height: 360px;
@@ -235,6 +293,9 @@
   }
   .customSection {
     padding: 24px 24px;
+  }
+  .paneFooter {
+    padding: 28px 24px;
   }
 }
 
@@ -261,5 +322,8 @@
   .tagItem,
   .toolItem {
     font-size: 12px;
+  }
+  .paneFooter {
+    padding: 24px 16px;
   }
 }

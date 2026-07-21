@@ -55,7 +55,7 @@ export function getFrontTexture(
   project: Project,
   force = false,
 ): Promise<THREE.CanvasTexture> {
-  const key = `front|${project.id}|${project.title}|${project.category}|${project.frontBg}|${project.image}`;
+  const key = `front|${project.id}|${project.title}|${project.category}|${project.image}`;
   return build(key, () => compositeCardFront(project), force);
 }
 

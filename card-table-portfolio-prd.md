@@ -1,8 +1,8 @@
 # PRD: Card Table Portfolio (Prototype Phase)
 
-**Status:** Draft v17 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection; a 404/Not Found page added (§4.9), net-new, not previously scoped)
+**Status:** Draft v18 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection; a 404/Not Found page added (§4.9), net-new, not previously scoped; Sanity CMS integration — originally scoped as this PRD's own Phase 2 — has since shipped as a separate, more granular tracked effort, `public/cms/INTEGRATION_CHECKLIST.md` (Phases 1-10 done); the mock-data era described in §1/§2 below no longer reflects the live app)
 **Owner:** [Your name]
-**Last updated:** July 16, 2026
+**Last updated:** July 22, 2026
 
 ---
 
@@ -10,7 +10,7 @@
 
 An alternate, spatially-themed front end for an existing portfolio, presented as a top-down view of a card table. Each project (and eventually other content) is represented as a physical playing card. Cards can be face-down (covered) or face-up (revealed), can be shuffled, and can be clicked to open — flipping and scaling up into a scrollable reading view of the underlying page content.
 
-This PRD covers the **prototype phase only**: a standalone project with mock/hardcoded content, focused entirely on proving out the visual and interaction design. CMS integration (Sanity) and full portfolio replacement are explicitly deferred to a later phase.
+This PRD originally covered the **prototype phase only**: a standalone project with mock/hardcoded content, focused entirely on proving out the visual and interaction design, with CMS integration (Sanity) and full portfolio replacement explicitly deferred to a later phase. That later phase has since happened: Sanity CMS integration is live (see `public/cms/INTEGRATION_CHECKLIST.md` for the phase-by-phase build). The interaction/animation design this PRD specifies is unchanged by that work — only the content source moved from `data/projects.ts` (deleted) to live Sanity queries (`lib/getProjects.ts`, `lib/getSiteSettings.ts`).
 
 ---
 
@@ -24,7 +24,7 @@ This PRD covers the **prototype phase only**: a standalone project with mock/har
 
 ### Non-goals (this phase)
 
-- Sanity CMS integration or any dynamic content fetching.
+- ~~Sanity CMS integration or any dynamic content fetching.~~ — was a Phase 1 non-goal; done as of July 2026, see §9 Phase 2 and `public/cms/INTEGRATION_CHECKLIST.md`.
 - Replacing or routing from the existing Next.js portfolio.
 - Non-project content types (About, Contact, Resume) as cards.
 - Search, filter-by-tag, or sort.
@@ -113,7 +113,7 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - On `/about`, the dock immediately shows its About button set — **Email, LinkedIn, X** (left group), **Resume, Back to Home** (right group) — no travel/crossfade/expand sequence, since the dock never left. All five are one-shot actions (open mail client / open a profile link / download a resume / navigate home), reusing the existing dock button interaction spec (Design System §3.3) — no new states.
 - **Back to Home** additionally guarantees the visitor never sees the onboarding gate on return: even if `/about` was reached via a direct link/bookmark (Home never actually dealt this session), Back to Home forces the deal to "complete" before Home mounts, so the deck simply translates into frame already dealt rather than replaying "Hello!"/the entrance deal.
 - The table header (wordmark/tagline), the play area's frame/dashed border, and the control dock all persist across both routes as site-wide chrome — unlike Home's own onboarding gate (§4.1), which still hides the header/heading/border/dock until the first deck click, they're visible immediately on `/about`, including a direct load.
-- **Resolved (Phase 1 build, July 2026):** About's own substantive layout/content is now built — six sections (Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, "Ready to deal?"), per Design System §3.11. Its Email/LinkedIn/X/Resume destinations remain placeholders (`lib/aboutLinks.ts`, tracked in `CHECKLIST.md`).
+- **Resolved (Phase 1 build, July 2026):** About's own substantive layout/content is now built — six sections (Hero, The Run, House Rules, Chips up my sleeve, Tables I've Played, "Ready to deal?"), per Design System §3.11. Its Email/LinkedIn/X/Resume destinations were initially placeholders (`lib/aboutLinks.ts`); resolved to real Sanity-sourced values by CMS integration Phase 10 (July 17, 2026) — see §10.
 - **Resolved (follow-up pass, July 2026):** Hero, The Run, Chips up my sleeve, and Tables I've Played each play a first-visit-only "dealt in" section-reveal on viewport intersection — gated the same way Home's onboarding gate is (a store flag that never resets except a hard reload), and held back until the page-level Home -> About slide-in has settled on a nav-arrival. House Rules and the closing "Ready to deal?" text remain plain copy with no reveal (Design System §3.11/§7 item 18).
 
 ### 4.9 404 / Not Found Page
@@ -188,8 +188,8 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 
 - **Phase 1 (this PRD):** Standalone prototype, mock content, full core animation/interaction set (§4.1–§4.6), desktop + mobile grid, plus the lower-cost delight items that reuse existing infrastructure — tell mechanic, dealer's choice card, chip-stack session tracker. Also includes the About page's routing/dock-transition architecture and section content (§4.8), pulled forward from the original Phase 2 placeholder scope — its entrance/scroll animation choreography remains a separate follow-up.
 - **Phase 1-stretch:** Table tells/achievements (shuffle-wink, edge wobble) and shuffle-triggered rediscovery — pure polish, easiest items to cut if time gets tight, tackled during animation tuning rather than as dedicated build tickets.
-- **Phase 2:** Sanity CMS integration — map existing project schema to card data, replace mock array with live queries.
-- **Phase 3:** Category color-coding of card backs (infrastructure already in place per §5), deep-linking to an opened card via URL, possible search/filter.
+- **Phase 2 — ✅ Done, July 2026:** Sanity CMS integration — map existing project schema to card data, replace mock array with live queries. Built as its own granular, phased effort rather than a single swap; see `public/cms/INTEGRATION_CHECKLIST.md` for the 10 completed phases (data flow, texture wiring, reading-pane content, autoplay video, revalidation webhook, About page) plus the 2 phases still pending below.
+- **Phase 3:** Category color-coding of card backs (infrastructure already in place per §5) — corresponds to the integration checklist's **Phase 11, blocked**: needs a new color field added to the `category` schema on the Sanity side (user-administered, not actionable from this repo yet). Deep-linking to an opened card via URL — corresponds to the integration checklist's **Phase 12, parked** (no urgency, not blocking anything else). Possible search/filter remains uncommitted scope, unstarted.
 - **Phase 4 (open):** Decide whether this becomes the primary portfolio front end, a permanent alternate route, or a standalone experiment — revisit based on Phase 1–2 results.
 
 ---
@@ -199,7 +199,7 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 ### Resolved (Phase 1 build, July 2026)
 
 - **Clicking during the entrance deal:** ignored — no queuing, no interrupt (see Design System §6).
-- **Card count:** data-driven (`data/projects.ts`), no longer a hard cap — currently 15 mock projects, any row count beyond the 2-row reference density scrolls within the play area rather than being capped or downscaled (Design System §4.1).
+- **Card count:** data-driven, no longer a hard cap — originally 15 mock projects (`data/projects.ts`, since deleted), now the live count of Sanity projects (14 as of the CMS integration's Phase 2 dataset spot-check) fetched via `lib/getProjects.ts`; any row count beyond the 2-row reference density scrolls within the play area rather than being capped or downscaled (Design System §4.1).
 - **Onboarding gate (pre-table):** the deal no longer fires automatically on load — a "Hello!"/tap-the-deck gate precedes it (§4.1). Click-to-deal is the only supported input; there's no auto-advance/timeout fallback.
 - **Dashed play-area border:** permanent UI element — the tablecloth edge, and (as of the play-area refactor) the app's real main content container and scroll boundary, not decorative-only (Design System §4.3).
 - **Cover/reveal + shuffle while a card is open:** visible but disabled (reduced opacity, non-interactive) until the card closes.
@@ -210,7 +210,11 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Control dock on mobile:** below 767px the dock restacks into a centered vertical column (logo, left group, right group) rather than staying a horizontal pill with no room left to shrink — see Design System §3.3 for the exact layout.
 - **404 / Not Found page:** not previously scoped in this document — a net-new page is now built, reusing the site-wide chrome (felt, play-area frame, header) with its own "Bust!"/4-0-4 card fan content; the control dock doesn't render on this route at all (§4.9, Design System §3.3/§3.12).
 
+### Resolved (CMS integration Phase 10, July 17, 2026)
+
+- **Real contact/resume destinations:** `lib/aboutLinks.ts` (placeholder values) is deleted. The About dock's Email, LinkedIn, X, and Resume now read real `resumeUrl`/`socialLinks` off Sanity's `siteSettings` document via `lib/getSiteSettings.ts`'s `getSiteSettings()` — degrades to an empty/placeholder default only if the fetch itself fails, not by design.
+- **Real tool-chip logo assets:** `data/tools.ts` (the `Typescript.png`-for-everything placeholder) is deleted. Tool chips now read real per-tool `logoUrl`/`logoAlt`/`color` off Sanity's `tools` documents via `getFeaturedTools()`, falling back to the tool's `title` only when `logoAlt` itself isn't authored in the Studio yet (a content gap, not a code gap).
+
 ### Still open
 
-- **Real contact/resume destinations:** the About dock's Email, LinkedIn, X, and Resume all point to placeholder values (`lib/aboutLinks.ts`) pending real links and a resume file.
-- **Real tool-chip logo assets:** the new Tools section (`data/tools.ts`) reuses the one real logo asset that exists (`Typescript.png`) as a placeholder across all 19 entries — a confirmed decision for this pass, not an oversight; real per-tool icons are a separate follow-up (Design System §7).
+(none remaining as of this pass)

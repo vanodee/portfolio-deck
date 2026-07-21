@@ -2,7 +2,7 @@
 
 An interactive portfolio presented as a top-down view of a card table. Each project is a physical playing card — face-down until revealed, shufflable, and clickable to flip and scale up into a scrollable reading view of the project detail.
 
-This is the **Phase 1 prototype**: a standalone build with mock/hardcoded content, focused on proving out the visual and interaction design before any CMS is wired in. Sanity CMS integration and full portfolio replacement are a deferred later phase — the intended swap point is `data/projects.ts`.
+Started as a **Phase 1 prototype** with mock/hardcoded content, to prove out the visual and interaction design before any CMS was wired in. That's since happened: content — projects, About page copy, tools, clients — is now live from a shared **Sanity** dataset (`lib/getProjects.ts`, `lib/getSiteSettings.ts`), fetched server-side and hydrated into the Zustand store. This is a **read-only** consumer of that dataset; there's no Studio or schema authoring in this repo. See `public/cms/INTEGRATION_CHECKLIST.md` for the phased integration history and what's still pending.
 
 ## Highlights
 
@@ -22,9 +22,12 @@ See `card-table-portfolio-prd.md` for the full feature spec and `card-table-port
 - [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) / [three.js](https://threejs.org) for the WebGL card table
 - [@react-spring/three](https://react-spring.dev) for canvas motion, [Framer Motion](https://www.framer.com/motion) for DOM overlays
 - [Zustand](https://zustand-demo.pmnd.rs) for shared table state
+- [Sanity](https://www.sanity.io) (`next-sanity`, `@sanity/image-url`) for content — read-only, shared dataset
 - CSS Modules + `app/tokens.css` (no Tailwind)
 
 ## Getting started
+
+Requires `NEXT_PUBLIC_SANITY_PROJECT_ID` / `NEXT_PUBLIC_SANITY_DATASET` in `.env.local` (see `public/cms/INTEGRATION_CHECKLIST.md`'s env & credentials table for the full list, including what's only needed for deploy).
 
 ```bash
 npm install
@@ -51,14 +54,15 @@ node scripts/snap.mjs <outDir> <step> [--mobile]
 
 ## Project structure
 
-- `app/` — Next.js routes (`/` table, `/about`)
+- `app/` — Next.js routes (`/` table, `/about`), plus `api/revalidate` (Sanity webhook) and `global-error.tsx` (listing-fetch failure boundary)
 - `components/canvas/` — R3F scene: cards, table, click handling
-- `components/dom/` — DOM/overlay UI (control dock, header, open-card overlay, About page sections)
-- `lib/` — shared layout math, motion tokens, easing curves, card texture compositing, multi-card choreography
-- `store/` — Zustand store for table/card interaction state
-- `data/` — mock content (`projects.ts` is the Phase 2 CMS swap point)
+- `components/dom/` — DOM/overlay UI (control dock, header, open-card overlay + its category-specific `ProjectBody/` renderers, About page sections)
+- `lib/` — shared layout math, motion tokens, easing curves, card texture compositing, multi-card choreography, and the Sanity data layer (`sanity.client.ts`, `queries.ts`, `getProjects.ts`, `getSiteSettings.ts`)
+- `store/` — Zustand store for table/card interaction state, hydrated with live content via `ProjectsHydrator`/`SiteSettingsHydrator`
+- `data/` — shared type definitions (`types.ts`) and the Hero photo spread (`photos.ts`); no mock content remains
+- `public/cms/` — reference docs for the shared Sanity dataset this repo consumes (`SCHEMA.md`, `FRONTEND_INTEGRATION.md`, `PROJECT_PAGE_LAYOUT.md`) and this project's own integration plan/log (`INTEGRATION_CHECKLIST.md`)
 - `scripts/snap.mjs` — Playwright screenshot harness for visual verification
 
 ## Status
 
-Phase 1 prototype — mock data, no CMS, no routing from an existing portfolio site. See `CHECKLIST.md` for outstanding items and the PRD's open-questions section (§10) for unresolved design decisions.
+Core interaction/animation set (PRD Phase 1) and Sanity CMS integration (PRD Phase 2, `public/cms/INTEGRATION_CHECKLIST.md` Phases 1-10) are both built. Remaining: category-based card-back color-coding (blocked on a Sanity schema field, integration checklist Phase 11) and URL deep-linking to an opened card (parked, Phase 12). See `CHECKLIST.md` for outstanding polish items and the PRD's open-questions section (§10) for unresolved design decisions.

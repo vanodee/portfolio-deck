@@ -9,6 +9,7 @@ Started as a **Phase 1 prototype** with mock/hardcoded content, to prove out the
 - **Onboarding gate** — cards spawn shuffling at a deck position; the visitor taps in before anything else animates or becomes interactive.
 - **Deal / idle / shuffle** — cards deal into a grid with dealer-style stagger, bob gently at rest, and can be reshuffled with a physically plausible reposition animation.
 - **Cover / reveal** — a global toggle flips the whole table between face-down and face-up in one action.
+- **Category filter** — a dock button + popover menu narrows the table to one project category; non-matching cards dim, desaturate, and drop out of interaction/tab order.
 - **Open / close** — clicking a card flips it (if covered), gathers the rest of the deck behind it, then scales it up into a scrollable reading view; closing reverses the sequence.
 - **Hover "tell"** — lingering on a covered card triggers a partial peek flip, like a poker tell.
 - **About route** — a dedicated `/about` page. The control dock persists across the route change with no transition of its own; the page's own content slides in/out from the right, timed alongside the table's deck sliding off/on. First-visit-only, its four card/chip sections (Hero, The Run, Chips up my sleeve, Tables I've Played) deal themselves in one at a time on scroll.
@@ -65,4 +66,4 @@ node scripts/snap.mjs <outDir> <step> [--mobile]
 
 ## Status
 
-Core interaction/animation set (PRD Phase 1) and Sanity CMS integration (PRD Phase 2, `public/cms/INTEGRATION_CHECKLIST.md` Phases 1-10) are both built. Remaining: category-based card-back color-coding (blocked on a Sanity schema field, integration checklist Phase 11) and URL deep-linking to an opened card (parked, Phase 12). See `CHECKLIST.md` for outstanding polish items and the PRD's open-questions section (§10) for unresolved design decisions.
+Core interaction/animation set (PRD Phase 1) and Sanity CMS integration (PRD Phase 2, `public/cms/INTEGRATION_CHECKLIST.md` Phases 1-10) are both built, as is a Home-dock **Category Filter** (PRD Phase 3/§4.10) — narrows the table to one project category, client-side. It supersedes what Phase 3 originally planned as category-based card-back color-coding (integration checklist Phase 11, blocked on a Sanity schema field that was never added) — that plan is closed out, not just blocked. Remaining: URL deep-linking to an opened card (parked, Phase 12). See `CHECKLIST.md` for outstanding polish items and the PRD's open-questions section (§10) for unresolved design decisions.

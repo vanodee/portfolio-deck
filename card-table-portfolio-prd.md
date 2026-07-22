@@ -1,6 +1,6 @@
 # PRD: Card Table Portfolio (Prototype Phase)
 
-**Status:** Draft v18 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection; a 404/Not Found page added (§4.9), net-new, not previously scoped; Sanity CMS integration — originally scoped as this PRD's own Phase 2 — has since shipped as a separate, more granular tracked effort, `public/cms/INTEGRATION_CHECKLIST.md` (Phases 1-10 done); the mock-data era described in §1/§2 below no longer reflects the live app)
+**Status:** Draft v19 — Prototype scope (Phase 1 implemented; About page resolved as its own route; Chip, Brand Card, Photo Card, and Experience Card components built and now placed into the About page's section layout; control dock revised to persist across the Home <-> About route change instead of replaying its formation choreography per navigation; control dock made responsive below 767px; About's own content now has its own page-level route-transition motion, translating in/out from the right; Hero/Run/Chips/Brands now have first-visit-only section-reveal choreography on viewport intersection; a 404/Not Found page added (§4.9), net-new, not previously scoped; Sanity CMS integration — originally scoped as this PRD's own Phase 2 — has since shipped as a separate, more granular tracked effort, `public/cms/INTEGRATION_CHECKLIST.md` (Phases 1-10 done); a Category Filter added to the Home dock (§4.10), net-new, superseding the previously-planned category-based card-back color-coding (old §5/§9 Phase 3 hook, integration checklist Phase 11 — closed out, see §9/§10); the mock-data era described in §1/§2 below no longer reflects the live app)
 **Owner:** [Your name]
 **Last updated:** July 22, 2026
 
@@ -27,7 +27,7 @@ This PRD originally covered the **prototype phase only**: a standalone project w
 - ~~Sanity CMS integration or any dynamic content fetching.~~ — was a Phase 1 non-goal; done as of July 2026, see §9 Phase 2 and `public/cms/INTEGRATION_CHECKLIST.md`.
 - Replacing or routing from the existing Next.js portfolio.
 - Non-project content types (About, Contact, Resume) as cards.
-- Search, filter-by-tag, or sort.
+- ~~Search, filter-by-tag, or sort.~~ — filter-by-category shipped (§4.10), see §9's Category Filter entry; full-text search and sort remain out of scope.
 - Hand-ranking / poker-hand-strength tagging of projects (considered, parked — not in scope).
 - Full accessibility/SEO polish (baseline keyboard support only — see §8).
 
@@ -125,6 +125,16 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Control dock:** doesn't render at all on this page — not even a reduced state. Clicking the card spread lands directly on Home's own onboarding gate, which has no dock either, so there's nothing for it to usefully show in between.
 - **No connection to the Home <-> About route-transition system:** a 404 is only ever reached via a hard/broken link, never the in-app dock toggle, so it doesn't participate in `dockNavPhase`/the deck-exit or About-content-exit choreography (§4.8) — it has its own independent, self-contained entrance instead.
 
+### 4.10 Category Filter
+
+**Resolved/built (July 2026):** a new left-most Home-dock button (Design System §3.15) that narrows the table to one project category, purely client-side over the already-hydrated Sanity data — no new query. This is the feature that ends up carrying the category-based visual-differentiation goal §5/§9 originally assigned to card-back color-coding; see §10 for that supersession.
+
+- **Dock button:** shows a live count — total project count by default, or the active category's count once a filter is applied — and doubles as the popover's own open/close affordance: its content swaps to a close (X) icon while the menu is open, reverting to the count the moment the menu closes (by selection, Escape, or click-outside).
+- **Popover menu:** lists "All projects" plus every distinct category present in the data, alphabetical, each row showing that category's own project count. Opens/closes with a staggered fade+scale, closest-to-dock row first on open, reversed on close. Selecting a row (including re-selecting the currently-active one) applies that filter and closes the menu; "All projects" clears the filter.
+- **Table effect:** cards outside the active category dim, desaturate toward black, shrink slightly, and stop their idle bob — reading as "off" rather than removed — while matching cards are unaffected. Filtered-out cards also stop being clickable/hoverable and drop out of the keyboard tab order, so Tab only ever reaches cards currently in view.
+- **Global controls unaffected:** Shuffle and Cover/Reveal (§4.3/§4.4) still act on every card regardless of the active filter — the filter only changes which cards are interactive/visible-at-full-strength, never the global toggle/shuffle state.
+- **Not persisted:** the active category resets on reload/navigation like every other table-interaction state (position, face-up state) — no URL param, no localStorage.
+
 ---
 
 ## 5. Technical Approach
@@ -139,7 +149,7 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 - **Animation:** `@react-spring/three` for in-canvas card motion (flip, scale, deal, shuffle, idle bob, peek); Framer Motion for the DOM overlay's fade/scale entrance.
 - **Content for prototype:** hardcoded/mock array of "project" objects (title, category, date, image, body content, back styling, flagship flag) — shaped loosely like the eventual Sanity schema so the future data-swap is low-friction, but with zero actual CMS dependency.
 - **Card faces are generated textures, not static images.** Both card back and card front are composited on an offscreen canvas and uploaded as a `THREE.CanvasTexture`, rather than using baked PNGs directly on the mesh. This is what makes per-card/per-category color and content variation possible without a redesign:
-  - **Back:** the existing procedural circuit-trace generator takes `traceColor`, `borderColor`, and `bgColor` as parameters instead of hardcoded values. A `category` (and later, flagship/rarity tier) can key into a lookup table that drives these params — effectively pre-building the Phase 3 category color-coding hook while still in Phase 1.
+  - **Back:** the existing procedural circuit-trace generator takes `traceColor`, `borderColor`, and `bgColor` as parameters instead of hardcoded values, keyed off `isFlagship` (`lib/cardBackStyle.ts`) — flagship cards get the gold treatment, everything else the standard blue. A `category` key into the same lookup was the original plan for category-based back color-coding; **superseded (§4.10, §9/§10):** that job now belongs to the Category Filter instead, so no category-keyed back palette is planned.
   - **Front:** a composite pass — fill `frontBg` color, draw the project image (via `THREE.TextureLoader` or an offscreen `drawImage`, so a local mock path and a future CMS asset URL are handled identically), then draw title/category/date text via `ctx.fillText` using Outfit (per the Design System §2 — this supersedes an earlier Fraunces + IBM Plex Mono direction), awaited through `document.fonts.load` before first draw.
   - Textures are recomposited only when their source params change (color, text, image, rarity roll) — never per-frame — with `@react-spring/three` left to animate the mesh (flip/scale/position), not the texture itself.
 - **Mock project schema (indicative):**
@@ -188,8 +198,8 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 
 - **Phase 1 (this PRD):** Standalone prototype, mock content, full core animation/interaction set (§4.1–§4.6), desktop + mobile grid, plus the lower-cost delight items that reuse existing infrastructure — tell mechanic, dealer's choice card, chip-stack session tracker. Also includes the About page's routing/dock-transition architecture and section content (§4.8), pulled forward from the original Phase 2 placeholder scope — its entrance/scroll animation choreography remains a separate follow-up.
 - **Phase 1-stretch:** Table tells/achievements (shuffle-wink, edge wobble) and shuffle-triggered rediscovery — pure polish, easiest items to cut if time gets tight, tackled during animation tuning rather than as dedicated build tickets.
-- **Phase 2 — ✅ Done, July 2026:** Sanity CMS integration — map existing project schema to card data, replace mock array with live queries. Built as its own granular, phased effort rather than a single swap; see `public/cms/INTEGRATION_CHECKLIST.md` for the 10 completed phases (data flow, texture wiring, reading-pane content, autoplay video, revalidation webhook, About page) plus the 2 phases still pending below.
-- **Phase 3:** Category color-coding of card backs (infrastructure already in place per §5) — corresponds to the integration checklist's **Phase 11, blocked**: needs a new color field added to the `category` schema on the Sanity side (user-administered, not actionable from this repo yet). Deep-linking to an opened card via URL — corresponds to the integration checklist's **Phase 12, parked** (no urgency, not blocking anything else). Possible search/filter remains uncommitted scope, unstarted.
+- **Phase 2 — ✅ Done, July 2026:** Sanity CMS integration — map existing project schema to card data, replace mock array with live queries. Built as its own granular, phased effort rather than a single swap; see `public/cms/INTEGRATION_CHECKLIST.md` for the 10 completed phases (data flow, texture wiring, reading-pane content, autoplay video, revalidation webhook, About page), plus **Phase 11 — closed, superseded** (see below) and **Phase 12 — parked, still pending**.
+- **Phase 3 — ✅ Done, July 2026 (revised scope):** ~~Category color-coding of card backs~~ — closed out, superseded by the Category Filter (§4.10), a client-side filter menu on the Home dock rather than a category-keyed back palette; corresponds to the integration checklist's **Phase 11**, now closed rather than blocked — no Sanity schema change needed. This also resolves the "possible search/filter" scope this bullet previously left uncommitted (§2's non-goals, revised) — filter-by-category is built; full-text search and sort remain out of scope. Deep-linking to an opened card via URL remains open — corresponds to the integration checklist's **Phase 12, parked** (no urgency, not blocking anything else).
 - **Phase 4 (open):** Decide whether this becomes the primary portfolio front end, a permanent alternate route, or a standalone experiment — revisit based on Phase 1–2 results.
 
 ---
@@ -214,6 +224,10 @@ Optional interaction-as-signal touches, scoped so none of them gate or slow down
 
 - **Real contact/resume destinations:** `lib/aboutLinks.ts` (placeholder values) is deleted. The About dock's Email, LinkedIn, X, and Resume now read real `resumeUrl`/`socialLinks` off Sanity's `siteSettings` document via `lib/getSiteSettings.ts`'s `getSiteSettings()` — degrades to an empty/placeholder default only if the fetch itself fails, not by design.
 - **Real tool-chip logo assets:** `data/tools.ts` (the `Typescript.png`-for-everything placeholder) is deleted. Tool chips now read real per-tool `logoUrl`/`logoAlt`/`color` off Sanity's `tools` documents via `getFeaturedTools()`, falling back to the tool's `title` only when `logoAlt` itself isn't authored in the Studio yet (a content gap, not a code gap).
+
+### Resolved (Category Filter build, July 2026)
+
+- **Category-based visual differentiation:** originally planned as card-back color-coding (§5's `traceColor`/`borderColor`/`bgColor` category hook, roadmap Phase 3, integration checklist Phase 11 — blocked on a Sanity schema field that was never added). **Superseded, closed out:** a client-side Category Filter menu on the Home dock (§4.10, Design System §3.15) does this job instead — narrowing which cards read as "in view" rather than color-tagging every card at once — without needing any Sanity schema change. Integration checklist Phase 11 and its "New category-color schema field(s)" open decision are both closed; no schema field will be added for this purpose.
 
 ### Still open
 

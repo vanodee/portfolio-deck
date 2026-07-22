@@ -21,12 +21,20 @@ export default function A11yCardButtons({ layout }: A11yCardButtonsProps) {
   const dealComplete = useTableStore((s) => s.dealComplete);
   const openCardId = useTableStore((s) => s.openCardId);
   const openCard = useTableStore((s) => s.openCard);
+  const activeCategory = useTableStore((s) => s.activeCategory);
 
-  // Tab order follows the grid, not the data array.
-  const ordered = projects.map((p) => ({
-    project: p,
-    gridIndex: cards[p.id].gridIndex,
-  })).sort((a, b) => a.gridIndex - b.gridIndex);
+  // Tab order follows the grid, not the data array. Cards outside the active
+  // category filter are excluded entirely — removes them from both the
+  // click target and the Tab order in one change, no separate aria-hidden/
+  // tabIndex bookkeeping needed (Card.tsx's own isInteractive() mirrors this
+  // same exclusion on the WebGL side).
+  const ordered = projects
+    .filter((p) => activeCategory === null || p.category === activeCategory)
+    .map((p) => ({
+      project: p,
+      gridIndex: cards[p.id].gridIndex,
+    }))
+    .sort((a, b) => a.gridIndex - b.gridIndex);
 
   return (
     <div

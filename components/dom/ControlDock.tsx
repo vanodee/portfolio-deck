@@ -3,8 +3,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useIsNotFoundRoute } from "@/hooks/useIsNotFoundRoute";
+import { useCategoryFilter } from "@/hooks/useCategoryFilter";
 import { useTableStore } from "@/store/useTableStore";
 import {
   toggleRevealAll,
@@ -26,6 +27,8 @@ import { MOTION } from "@/lib/motion";
 import styles from "./ControlDock.module.css";
 import DockButton from "./DockButton";
 import DockToggle from "./DockToggle";
+import CategoryFilterButton from "./CategoryFilterButton";
+import CategoryFilterMenu from "./CategoryFilterMenu";
 
 // Persists across the Home <-> About route change (app/layout.tsx, alongside
 // TableHeader/PlayArea) instead of remounting per route — only the button
@@ -79,6 +82,10 @@ export default function ControlDock() {
   const socialLinks = useTableStore((s) => s.socialLinks);
   const resumeUrl = useTableStore((s) => s.resumeUrl);
   const locked = onHome && (!dealComplete || openCardId !== null);
+
+  const categoryFilter = useCategoryFilter();
+  const categoryFilterButtonRef = useRef<HTMLButtonElement>(null);
+  const dockRef = useRef<HTMLElement>(null);
 
   // Formed once past Home's onboarding gate; every other route has no
   // onboarding concept of its own, so it's always formed there.
@@ -186,120 +193,143 @@ export default function ControlDock() {
   if (notFound) return null;
 
   return (
-    <motion.nav
-      className={styles.dock}
-      aria-label="Table controls"
-      style={{ pointerEvents: formed ? "auto" : "none" }}
-      initial={false}
-      animate={dockPillAnimate(formed)}
-      transition={dockPillTransition(formed)}
-    >
-      <motion.div
-        className={styles.group}
-        variants={groupVariants}
-        initial={settled ? false : "hidden"}
-        animate={formed ? "show" : "hidden"}
+    <>
+      <motion.nav
+        ref={dockRef}
+        className={styles.dock}
+        aria-label="Table controls"
+        style={{ pointerEvents: formed ? "auto" : "none" }}
+        initial={false}
+        animate={dockPillAnimate(formed)}
+        transition={dockPillTransition(formed)}
       >
-        {onHome ? (
-          <>
-            <motion.div variants={dockButtonVariants}>
-              <motion.div
-                variants={leftSwapButtonVariants}
-                initial={hasSwapped ? "hidden" : false}
-                animate={leftVisible ? "show" : "hidden"}
-                transition={leftSwapTransition(0)}
-              >
-                <DockButton
-                  icon="/assets/icons/closed_eye.svg"
-                  activeIcon="/assets/icons/eye.svg"
-                  label={allRevealed ? "Cover all cards" : "Reveal all cards"}
-                  active={allRevealed}
-                  disabled={disabledAll}
-                  onClick={toggleRevealAll}
-                />
-              </motion.div>
-            </motion.div>
-            <motion.div variants={dockButtonVariants}>
-              <motion.div
-                variants={leftSwapButtonVariants}
-                initial={hasSwapped ? "hidden" : false}
-                animate={leftVisible ? "show" : "hidden"}
-                transition={leftSwapTransition(1)}
-              >
-                <DockButton
-                  icon="/assets/icons/shuffle.svg"
-                  label="Shuffle cards"
-                  disabled={disabledAll}
-                  onClick={shuffleTable}
-                />
-              </motion.div>
-            </motion.div>
-          </>
-        ) : (
-          <>
-            {socialLinks.map((link, index) => {
-              const meta = socialPlatformMeta(link.platform);
-              const isEmail = link.platform === "Email";
-              return (
-                <motion.div key={link.platform} variants={dockButtonVariants}>
-                  <motion.div
-                    variants={leftSwapButtonVariants}
-                    initial={hasSwapped ? "hidden" : false}
-                    animate={leftVisible ? "show" : "hidden"}
-                    transition={leftSwapTransition(index)}
-                  >
-                    <DockButton
-                      icon={meta.icon}
-                      label={meta.label}
-                      disabled={disabledAll}
-                      href={socialLinkHref(link)}
-                      target={isEmail ? undefined : "_blank"}
-                      rel={isEmail ? undefined : "noopener noreferrer"}
-                    />
-                  </motion.div>
-                </motion.div>
-              );
-            })}
-          </>
-        )}
-      </motion.div>
-      {/* This slot's own size/position must stay stable from first paint
-          (grid sizing depends on it), but the layoutId-bearing element
-          inside only mounts once formed — a shared layoutId that's already
-          mounted (even invisibly) doesn't get a FLIP transition when the
-          standalone logo exits toward it, Framer Motion just snaps
-          instantly since it sees a duplicate, already-resolved instance
-          rather than a clean exit->enter pair. */}
-      <div className={styles.centerLogo} aria-hidden="true">
-        {formed && (
-          <motion.div layoutId="logo-mark-travel" className={styles.centerLogoImg}>
-            <img src="/assets/logo-mark.png" alt="" />
-          </motion.div>
-        )}
-      </div>
-      <motion.div
-        className={styles.group}
-        variants={groupVariants}
-        initial={settled ? false : "hidden"}
-        animate={formed ? "show" : "hidden"}
-      >
-        <motion.div variants={dockButtonVariants}>
-          <DockButton
-            icon="/assets/icons/resume.svg"
-            label="Resume"
-            disabled={disabledAll}
-            href={resumeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          />
-        </motion.div>
         <motion.div
-          className={styles.toggleContainer}
-          variants={dockButtonVariants}
+          className={styles.group}
+          variants={groupVariants}
+          initial={settled ? false : "hidden"}
+          animate={formed ? "show" : "hidden"}
         >
-          <DockToggle checked={checked} disabled={disabledAll} onToggle={handleToggle} />
+          {onHome ? (
+            <>
+              <motion.div variants={dockButtonVariants}>
+                <motion.div
+                  variants={leftSwapButtonVariants}
+                  initial={hasSwapped ? "hidden" : false}
+                  animate={leftVisible ? "show" : "hidden"}
+                  transition={leftSwapTransition(0)}
+                >
+                  <CategoryFilterButton
+                    ref={categoryFilterButtonRef}
+                    count={categoryFilter.count}
+                    activeCategory={categoryFilter.activeCategory}
+                    categoryMenuOpen={categoryFilter.categoryMenuOpen}
+                    disabled={disabledAll}
+                    onClick={categoryFilter.toggleCategoryMenu}
+                  />
+                </motion.div>
+              </motion.div>
+              <motion.div variants={dockButtonVariants}>
+                <motion.div
+                  variants={leftSwapButtonVariants}
+                  initial={hasSwapped ? "hidden" : false}
+                  animate={leftVisible ? "show" : "hidden"}
+                  transition={leftSwapTransition(1)}
+                >
+                  <DockButton
+                    icon="/assets/icons/closed_eye.svg"
+                    activeIcon="/assets/icons/eye.svg"
+                    label={allRevealed ? "Cover all cards" : "Reveal all cards"}
+                    active={allRevealed}
+                    disabled={disabledAll}
+                    onClick={toggleRevealAll}
+                  />
+                </motion.div>
+              </motion.div>
+              <motion.div variants={dockButtonVariants}>
+                <motion.div
+                  variants={leftSwapButtonVariants}
+                  initial={hasSwapped ? "hidden" : false}
+                  animate={leftVisible ? "show" : "hidden"}
+                  transition={leftSwapTransition(2)}
+                >
+                  <DockButton
+                    icon="/assets/icons/shuffle.svg"
+                    label="Shuffle cards"
+                    disabled={disabledAll}
+                    onClick={shuffleTable}
+                  />
+                </motion.div>
+              </motion.div>
+            </>
+          ) : (
+            <>
+              {socialLinks.map((link, index) => {
+                const meta = socialPlatformMeta(link.platform);
+                const isEmail = link.platform === "Email";
+                return (
+                  <motion.div key={link.platform} variants={dockButtonVariants}>
+                    <motion.div
+                      variants={leftSwapButtonVariants}
+                      initial={hasSwapped ? "hidden" : false}
+                      animate={leftVisible ? "show" : "hidden"}
+                      transition={leftSwapTransition(index)}
+                    >
+                      <DockButton
+                        icon={meta.icon}
+                        label={meta.label}
+                        disabled={disabledAll}
+                        href={socialLinkHref(link)}
+                        target={isEmail ? undefined : "_blank"}
+                        rel={isEmail ? undefined : "noopener noreferrer"}
+                      />
+                    </motion.div>
+                  </motion.div>
+                );
+              })}
+            </>
+          )}
         </motion.div>
-      </motion.div>
-    </motion.nav>
+        {/* This slot's own size/position must stay stable from first paint
+            (grid sizing depends on it), but the layoutId-bearing element
+            inside only mounts once formed — a shared layoutId that's already
+            mounted (even invisibly) doesn't get a FLIP transition when the
+            standalone logo exits toward it, Framer Motion just snaps
+            instantly since it sees a duplicate, already-resolved instance
+            rather than a clean exit->enter pair. */}
+        <div className={styles.centerLogo} aria-hidden="true">
+          {formed && (
+            <motion.div layoutId="logo-mark-travel" className={styles.centerLogoImg}>
+              <img src="/assets/logo-mark.png" alt="" />
+            </motion.div>
+          )}
+        </div>
+        <motion.div
+          className={styles.group}
+          variants={groupVariants}
+          initial={settled ? false : "hidden"}
+          animate={formed ? "show" : "hidden"}
+        >
+          <motion.div variants={dockButtonVariants}>
+            <DockButton
+              icon="/assets/icons/resume.svg"
+              label="Resume"
+              disabled={disabledAll}
+              href={resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          </motion.div>
+          <motion.div
+            className={styles.toggleContainer}
+            variants={dockButtonVariants}
+          >
+            <DockToggle checked={checked} disabled={disabledAll} onToggle={handleToggle} />
+          </motion.div>
+        </motion.div>
+      </motion.nav>
+      {onHome && (
+        <CategoryFilterMenu anchorRef={categoryFilterButtonRef} dockRef={dockRef} />
+      )}
+    </>
   );
 }

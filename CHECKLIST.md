@@ -45,11 +45,18 @@ Sanity integration is live — see `public/cms/INTEGRATION_CHECKLIST.md` for the
 full 10-phase build log (data flow, texture wiring, reading-pane content,
 autoplay video, revalidation webhook, About page).
 
-## Phase 3 (PRD §9)
+## Phase 3 (PRD §9) — mostly done, July 2026
 
-- [ ] **Category color-coding of card backs** — the back compositor already takes `traceColor/borderColor/bgColor` params; add the category → palette lookup and real category colors. Corresponds to the integration checklist's **Phase 11 — blocked**: needs a new color field added to the `category` schema on the Sanity side (user-administered).
+- [x] ~~Category color-coding of card backs~~ — closed out, superseded by the **Category Filter**
+      (built): a left-most Home-dock button + popover menu (`CategoryFilterButton.tsx`/
+      `CategoryFilterMenu.tsx`/`hooks/useCategoryFilter.ts`/`lib/categoryFilter.ts`) that narrows
+      the table to one category client-side, dimming/desaturating/shrinking non-matching cards and
+      dropping them from the tab order (PRD §4.10, Design System §3.15). Corresponds to the
+      integration checklist's **Phase 11 — now closed**, not just blocked: no Sanity schema field
+      is being requested; card backs stay default-blue/flagship-gold permanently.
+- [x] ~~Search / filter~~ — filter-by-category is built (see above); full-text search and sort
+      remain out of scope (PRD §2 non-goals).
 - [ ] **Deep-linking** — URL routes to a specific opened card. Corresponds to the integration checklist's **Phase 12 — parked**, not blocking anything else.
-- [ ] **Search / filter** — possible scope, not committed
 
 ## Phase 4 — open decision (PRD §9)
 
@@ -59,5 +66,6 @@ autoplay video, revalidation webhook, About page).
 
 - [ ] **Onboarding gate has no keyboard/screen-reader path** — the deck's click target (`DeckClickCatcher.tsx`) is a Three.js pointer-events mesh only; a keyboard-only visitor currently cannot trigger the deal and has no way to reach the table at all (PRD §8, DS §3.5)
 - [ ] **Onboarding + route-transition + section-reveal timing values need a tuning pass** — `MOTION.onboardingShuffle` / `MOTION.onboarding` / `MOTION.tableNav` / `MOTION.aboutNav` / `MOTION.aboutSectionReveal` (`lib/motion.ts`) are marked in code as placeholders (DS §6/§7) — also listed under "About page — content & polish" above
+- [ ] **Category Filter timing values need a tuning pass** — `MOTION.categoryFilter` (`lib/motion.ts`) — card dim/desaturate/scale, menu row fade+scale, button icon-swap — is marked in code as placeholder, same caveat as the row above (DS §3.15/§6)
 - [ ] **Full accessibility polish** — prototype ships the PRD §8 baseline (focusable card buttons, Escape, focus rings); a full pass (screen-reader flow, reduced-motion support, contrast audit) is deferred
 - [ ] **Test framework** — no automated tests; `scripts/snap.mjs` covers visual verification only

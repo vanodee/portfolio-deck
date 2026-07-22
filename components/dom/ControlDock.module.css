@@ -154,6 +154,160 @@
   transition: opacity 220ms ease;
 }
 
+/* Category-filter count button (CategoryFilterButton.tsx) — reuses .button/
+   .buttonActive verbatim; this is just the count/close-icon content inside
+   it. .countIconBox is a fixed 30px box (matches .iconStack's footprint on
+   every other dock button) so the count digit and the close icon center
+   identically as Framer Motion (mode="wait") swaps one for the other. */
+.countIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+}
+
+.countLabel {
+  color: var(--dock-icon);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.countIcon {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+
+/* Category-filter popover (CategoryFilterMenu.tsx) — no panel chrome of its
+   own; each row is its own individually-pilled glass button (DS §3.3 token
+   set), stacked in a column above the dock. Rows render top (furthest from
+   the dock) to bottom (closest) in DOM order — CategoryFilterMenu.tsx's
+   stagger direction depends on that order.
+
+   The gap above the dock is the same 12px as the inter-row gap below, so it
+   reads identically to the gaps between rows. `bottom` here (103px) is only
+   the pre-measurement fallback for the menu's very first paint (rows start
+   at opacity 0 regardless, so it's never actually visible) — the real value
+   is measured live off the dock nav's own bounding rect in
+   CategoryFilterMenu.tsx and applied as an inline style, since the dock's
+   rendered height isn't a fixed constant: it's 71px on desktop (set by the
+   tallest grid item, the right group's 53px .toggleTrack, not the 45px
+   buttons) but varies with content on the sub-767px stacked layout below
+   (logo + two button rows), so no single hardcoded offset works for both. */
+.categoryMenuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9; /* below .dock (10) so the count button stays clickable through it */
+}
+
+.categoryMenu {
+  position: fixed;
+  bottom: 103px;
+  left: 50%;
+  transform: translateX(-50%); /* fallback/mobile centering; desktop left overrides via inline style, both measured off the dock (CategoryFilterMenu.tsx) */
+  z-index: 11; /* above .dock and .categoryMenuBackdrop */
+  display: flex;
+  /* Rows render in reverse (closest-to-dock first) in DOM order —
+     CategoryFilterMenu.tsx's comment on menuVariants — so the container
+     stacks them bottom-up to keep the on-screen order (furthest at the
+     top, closest just above the dock) correct despite that. */
+  flex-direction: column-reverse;
+  /* align-items: stretch (default) — every row stretches to the container's
+     own width, and a flex column with no explicit width sizes itself to its
+     widest child's content, so all rows land at one uniform width (the
+     longest label's) for free, no JS measurement needed. */
+  gap: 12px;
+}
+
+/* Each row is its own glass pill (same fill/border/shadow/blur tokens as
+   .buttonGlass, but auto-width/height instead of the dock button's fixed
+   45px square) rather than a plain row inside a shared panel — .buttonActive
+   (verbatim, DS §3.3) applies here, to the whole pill, not just the count
+   circle. Declares its own ::before gradient overlay so that reused class
+   has something to brighten, same recipe as .button. */
+.categoryMenuRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 16px 5px 5px;
+  border-radius: 999px;
+  border: 1px solid var(--dock-button-border);
+  background: var(--dock-button-fill);
+  box-shadow: var(--dock-button-shadow);
+  backdrop-filter: var(--dock-button-blur);
+  cursor: pointer;
+  transition: border-color 200ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.categoryMenuRow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 20%,
+    rgba(255, 255, 255, 0.32) 80%
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .categoryMenuRow:hover {
+    transform: scale(1.04);
+  }
+
+  /* Lightness on hover — a lighter partial crossfade of the same ::before
+     gradient overlay .buttonActive brightens fully; the second rule keeps
+     an active row from dimming back down to the hover level while it's
+     also being hovered (higher specificity wins over the first). */
+  .categoryMenuRow:hover::before {
+    opacity: 0.6;
+  }
+
+  .categoryMenuRow.buttonActive:hover::before {
+    opacity: 1;
+  }
+}
+
+.categoryMenuRow:active {
+  transform: scale(0.96);
+  box-shadow: none;
+}
+
+/* A plain count badge, not a button in its own right (the row is the
+   button) — flat fill only, no border/shadow of its own. */
+.categoryMenuRowCircle {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--dock-button-fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dock-icon);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Uppercase + 2.4px tracking — the same micro-label recipe used throughout
+   the app for small labels (DS §2.2's card category/date micro-label;
+   ExperienceCard/PhotoCard's date line is "an exact match" to it verbatim). */
+.categoryMenuRowLabel {
+  position: relative;
+  color: var(--dock-icon);
+  font-size: 14px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 /* Route toggle (Home <-> About, DockToggle.tsx) — a groove carved into the
    dock's own surface (inset shadows only, no raised outer shadow or bright
    highlight stop — reads as a recessed cavity, the inverse of .dock's own

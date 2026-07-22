@@ -3,7 +3,7 @@
 import type { RefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { animated, useSpring } from "@react-spring/three";
+import { animated, to, useSpring } from "@react-spring/three";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import type { Project } from "@/data/types";
 import { COLORS, ELEVATION, type ElevationRow } from "@/lib/colors";
@@ -95,6 +95,8 @@ export default function Card({
   const isOpenCard = useTableStore((s) => s.openCardId === project.id);
   const anyCardOpen = useTableStore((s) => s.openCardId !== null);
   const openPhase = useTableStore((s) => s.openPhase);
+  const activeCategory = useTableStore((s) => s.activeCategory);
+  const isDimmed = activeCategory !== null && project.category !== activeCategory;
   const { size } = useThree();
   // Converts this card's content-local spring position into true-viewport
   // world coordinates every frame — imperative, not spring-driven, so
@@ -157,6 +159,23 @@ export default function Card({
   // effect below) — distinct from every other spring here, which react to
   // ongoing phase/interaction state; this one fires exactly once, ever.
   const [entrance, entranceApi] = useSpring(() => ({ opacity: 0 }));
+
+  // Category filter dim/desaturate (ControlDock's category menu) — 0 = full
+  // opacity/color, 1 = fully filtered-out. Combined with `entrance.opacity`
+  // via `to()` below (opacity multiplier) rather than replacing it, since
+  // entrance is reserved for the one-time mount/nav fade; desaturation is a
+  // separate flat-black overlay mesh (see the JSX), the same "extra overlay
+  // mesh" pattern the hover/flagship glow already use, not a shader. Also
+  // drives a slight scale-down (flip group below) and mutes idle bob
+  // (useFrame below) so filtered-out cards read as visually "off."
+  const [filter, filterApi] = useSpring(() => ({ dim: isDimmed ? 1 : 0 }));
+
+  useEffect(() => {
+    filterApi.start({
+      dim: isDimmed ? 1 : 0,
+      config: { duration: MOTION.categoryFilter.dimDuration, easing: easeInOut },
+    });
+  }, [isDimmed, filterApi]);
 
   // Onboarding cards spawn directly at the shuffle rest position (no
   // animated entrance/drop) — they only travel back up to the real deck
@@ -588,9 +607,11 @@ export default function Card({
   const isInteractive = () => {
     const s = useTableStore.getState();
     const p = s.cards[project.id].phase;
+    const filtered = s.activeCategory !== null && project.category !== s.activeCategory;
     return (
       s.dealComplete &&
       s.openCardId === null &&
+      !filtered &&
       (p === "idle" || p === "hovered" || p === "peeking")
     );
   };
@@ -722,7 +743,10 @@ export default function Card({
       Math.sin((tSec * 1000 * Math.PI * 2) / bobSeed.period + bobSeed.phase0) *
         0.5 +
       0.5;
-    const bobVal = wave * bob.amp.get();
+    // Filtered-out cards hold still — bob amplitude eases to 0 in step with
+    // the same filter.dim spring driving the dim/desaturate/scale-down, so
+    // it settles rather than cutting off abruptly.
+    const bobVal = wave * bob.amp.get() * (1 - filter.dim.get());
     const liftT = hover.lift.get() / MOTION.hover.liftPx;
 
     bobGroup.position.y = bobVal * 3;
@@ -815,7 +839,10 @@ export default function Card({
           <animated.group
             rotation-y={flip.rot}
             position-z={hover.lift}
-            scale={hover.hScale}
+            scale={to(
+              [hover.hScale, filter.dim],
+              (h, d) => h * (1 - d * (1 - MOTION.categoryFilter.dimScale)),
+            )}
             onPointerOver={handleOver}
             onPointerOut={handleOut}
             onClick={handleClick}
@@ -825,17 +852,46 @@ export default function Card({
               <AnimatedMeshBasicMaterial
                 map={textures.front}
                 transparent
-                opacity={entrance.opacity}
+                opacity={to(
+                  [entrance.opacity, filter.dim],
+                  (e, d) => e * (1 - d * (1 - MOTION.categoryFilter.dimOpacityMul)),
+                )}
               />
             </mesh>
+            {/* Category-filter desaturate overlay — a flat-black plane
+                alpha-blended on top of the face; mixing toward black is a
+                real desaturation, not just a dim, and reuses the same
+                "extra overlay mesh" pattern as the hover/flagship glow
+                rather than a shader. */}
+            <animated.mesh position-z={0.41}>
+              <planeGeometry args={[cardW, cardH]} />
+              <AnimatedMeshBasicMaterial
+                color="#000000"
+                transparent
+                depthWrite={false}
+                opacity={to(filter.dim, (d) => d * MOTION.categoryFilter.desaturateOverlay)}
+              />
+            </animated.mesh>
             <mesh position-z={-0.4} rotation-y={Math.PI}>
               <planeGeometry args={[cardW, cardH]} />
               <AnimatedMeshBasicMaterial
                 map={textures.back}
                 transparent
-                opacity={entrance.opacity}
+                opacity={to(
+                  [entrance.opacity, filter.dim],
+                  (e, d) => e * (1 - d * (1 - MOTION.categoryFilter.dimOpacityMul)),
+                )}
               />
             </mesh>
+            <animated.mesh position-z={-0.41} rotation-y={Math.PI}>
+              <planeGeometry args={[cardW, cardH]} />
+              <AnimatedMeshBasicMaterial
+                color="#000000"
+                transparent
+                depthWrite={false}
+                opacity={to(filter.dim, (d) => d * MOTION.categoryFilter.desaturateOverlay)}
+              />
+            </animated.mesh>
           </animated.group>
         </group>
       </animated.group>

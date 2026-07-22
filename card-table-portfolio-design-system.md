@@ -141,7 +141,7 @@ Note: Light appears once (category/date micro-label) despite the "Regular/Medium
 - Two-layer liquid glass: an outer pill container (`dock-fill`, `dock-border`, `dock-shadow`, `dock-blur` backdrop-filter) with the button/logo group as a second, brighter nested glass layer inside it — not a flat frosted-chip look, a real `backdrop-filter` blur that refracts the table/cards behind the dock
 - Layout is CSS Grid (`grid-template-columns: 1fr auto 1fr`), not flexbox — the two equal-width outer tracks guarantee the center logo stays truly centered regardless of how many buttons sit in each group (flex `justify-content:space-between` only splits free space between adjacent siblings, so it can't guarantee true centering once the groups hold unequal button counts)
 - Explicit pill width above the 767px breakpoint: `min(500px, calc(100vw - 64px))` — no longer shrink-wrapped; 16px horizontal padding, 8px vertical, 16px column gap between groups and logo, 16px gap within each group. Below 767px the dock is no longer a horizontal pill at all — see the responsive-stacking bullet below.
-- **Left group** (card controls, pinned to the pill's left edge): **Visibility Toggle** (eye), **Shuffle**
+- **Left group** (card controls, pinned to the pill's left edge): **Category Filter** (count/close-icon button + popover menu, §3.15 — net-new, added after this section was last substantively revised; supersedes the previously-planned category-based card-back color-coding, PRD §4.10/§10), **Visibility Toggle** (eye), **Shuffle**
 - **Right group** (pinned to the pill's right edge): **Resume**, then a **Home/About route toggle** (`DockToggle`) — a two-position sliding switch replacing the old separate About/Back-to-Home buttons; Resume opens the real `resumeUrl` fetched from Sanity's `siteSettings` document (`lib/getSiteSettings.ts`, resolved CMS integration Phase 10 — `lib/aboutLinks.ts`'s placeholder is deleted)
 - **Single persistent instance:** one `ControlDock` component, hoisted into the root layout, persists across the Home <-> About route change (§3.6) rather than each route mounting its own dock. The left group's button content still swaps instantly on navigation, keyed on the route — Home's Visibility Toggle/Shuffle swap for **Email, LinkedIn, X** on About. The right group's route toggle is different: it's one persistent element that never swaps/remounts, animating its thumb instead (see below).
 - **Route toggle (`DockToggle`, revised July 2026):** a `role="switch"` control, left position = `cards.svg` icon (Home), right position = `about.svg` icon (About), `aria-checked` = About-side active. Reuses the dock button's exact glass treatment for its thumb (extracted as a shared `.buttonGlass` class — fill/border/shadow/blur/45px size, identical to every other dock button) but the track itself is a **groove carved into the dock's surface**: inset-only shadows (`inset 0 2px 5px rgba(0,0,0,0.5)`, `inset 0 -1px 1px rgba(255,255,255,0.12)`), a darker gradient fill with no bright highlight stop, and a lighter `blur(10px) saturate(1.3)` than the raised buttons get — the inverse of the dock's own embossed look, component-local values (same precedent as the center-logo emboss below). Track: 96×51px; thumb: 45px (from `.buttonGlass`, unpositioned); groove padding 3px each side; thumb travel 45px. The **active side** looks exactly like a normal dock button (icon at full 30px/opacity 1, sitting inside the glass thumb); the **inactive side** is the bare icon only, dimmed and shrunk (opacity 0.45, scale 0.72×, `MOTION.dockToggle`) — no glass circle behind it. Transition: the thumb slides over 320ms (`openEaseBezierPoints`); the origin icon de-emphasizes immediately as the thumb departs (150ms); the destination icon's re-emphasis is delayed 140ms so it lands at full size/opacity exactly as the thumb arrives (180ms), producing a sequenced rather than simultaneous feel. The toggle's own click still routes through the existing Home<->About navigation (`beginTableNavExit`, §3.6) — the thumb only actually slides once the route change itself fires (after the deck's own off-table exit finishes), not optimistically on click, since its position is a direct reflection of `pathname`. All values here are provisional, same placeholder-pending-tuning caveat as onboarding/tableNav (§6).
@@ -383,6 +383,85 @@ pattern primitives, matching the reference's own one-vocabulary-four-bodies stru
 
 ---
 
+### 3.15 Category Filter (Dock Button + Menu)
+
+**Net-new (July 2026), not previously scoped in this document.** A left-most Home-dock button
+(`CategoryFilterButton.tsx`) plus its popover menu (`CategoryFilterMenu.tsx`) that narrows the
+table to one project category, purely client-side over the already-hydrated Sanity data (PRD
+§4.10). This is the feature that ends up owning the category-based visual-differentiation goal
+§1.2/§5 of the PRD originally assigned to card-back color-coding — see PRD §10 for that
+supersession; no card-back color token exists or is planned for this.
+
+**Dock button** — same 45×45px glass circle as every other dock button (§3.3's `.buttonGlass`
+tokens), but its content is live state rather than a static icon:
+- Shows the current project count (all projects, or the active category's count once filtered) as
+  20px/600-weight text — sized up from an initial 15px pass to sit closer to the other buttons'
+  30px icon visual weight, though still text rather than a glyph.
+- While the popover is open, the count is replaced by a close (X) icon (`close.svg`, same 30×30px/
+  monochrome-white recipe as every other dock icon) — doubles as the menu's own open/closed
+  affordance rather than leaving the button static while the popover is up.
+- The count ↔ close-icon swap is sequential, not a crossfade: `AnimatePresence mode="wait"` plays
+  the outgoing glyph shrinking + fading out (scale 1 → 0.5, opacity 1 → 0), then the incoming one
+  scaling up + fading in (reverse), 130ms per leg.
+- `.buttonActive` (§3.3, verbatim) applies whenever a filter is set, independent of whether the menu
+  itself is currently open — the two states (active filter vs. open menu) are visually distinct and
+  can be true independently.
+
+**Popover menu** — anchored above the dock, no panel chrome of its own:
+- Lists "All projects" first, then every distinct category present in the data, alphabetical, each
+  as its own individually-pilled glass row (`.categoryMenuRow` — same fill/border/shadow/blur
+  tokens as `.buttonGlass`, auto-width/height instead of a fixed 45px circle) showing a count badge
+  (16px text in a 32px flat circle, no border/shadow of its own — it's a label, not a button in its
+  own right) and an uppercase, 2.4px-tracked label (§2.2's micro-label recipe, verbatim).
+- Every row renders at one uniform width — the longest label's — for free via CSS flex-column
+  `align-items: stretch` sizing to the widest child, no JS measurement.
+- **Alignment:** left-aligned on desktop so each row's count circle sits in the same vertical line
+  as the dock button's own count (measured live off the button's `getBoundingClientRect()`, not
+  hardcoded); centered under the dock on mobile, where the dock itself restacks to a single column
+  and per-button alignment doesn't apply the same way (§3.3's responsive-stacking bullet).
+- **Vertical position is always measured, never hardcoded** — off the dock nav's own
+  `getBoundingClientRect()`, re-measured on resize — since the dock's rendered height varies by
+  breakpoint (71px on desktop, set by the right group's `.toggleTrack`, not the 45px buttons; a
+  taller, variable-height stacked layout below 767px). A fixed offset that matched desktop would
+  place the menu inside/behind the mobile dock instead of above it. The gap above the dock matches
+  the 12px gap between rows.
+- **Entrance/exit:** rows fade + scale in (opacity 0→1, scale 0.92→1), staggered closest-to-dock
+  first on open, reversing (furthest-first) on close — via `staggerChildren`/`staggerDirection` on
+  a plain `animate` variant toggle (this codebase's established dock-choreography idiom, §3.3/§3.6),
+  not `AnimatePresence`'s nested-exit tracking, which proved unreliable for this orchestration.
+  120ms/row, 20ms stagger gap — deliberately faster than `aboutSectionReveal`'s page-load timing,
+  since a popover should snap open/closed quicker than a section reveal.
+- **Hover:** a partial crossfade of the same `::before` gradient overlay `.buttonActive` brightens
+  fully (§3.3) — a row hovered while also active doesn't dim back down (specificity guard).
+- **Dismissal:** Escape, click-outside (full-screen transparent backdrop below the dock's own
+  z-index, so the count button stays clickable through it to toggle-close), or selecting any row
+  (including re-selecting the currently-active one) all close the menu; "All projects" clears the
+  filter.
+
+**Table effect (`Card.tsx`)** — cards outside the active category:
+- Fade toward `MOTION.categoryFilter.dimOpacityMul` (0.4×) face opacity, combined via `to()` with
+  the existing one-time entrance-fade spring rather than replacing it.
+- Desaturate via a flat-black overlay mesh (`#000000`, same "extra overlay mesh" pattern as the
+  hover/flagship glow, not a shader) fading to `desaturateOverlay` (0.55) peak opacity — mixing
+  toward black is a real desaturation, not just a dim. Chosen over gray after a design pass; gray
+  read as washed-out rather than clearly "filtered out."
+- Scale down slightly (`dimScale`, 0.96×) via the same spring driving the dim/desaturate.
+- Idle bob amplitude eases to 0 in step with the same spring (`bobVal * (1 - filter.dim.get())` in
+  the per-frame loop) — filtered-out cards hold still rather than continuing to bob.
+- Become non-interactive (`isInteractive()` gains a `!filtered` check) and drop out of the a11y tab
+  order (`A11yCardButtons.tsx` filters the ordered array before mapping) — one change removes a card
+  from both the click target and Tab order at once.
+- All of the above is one spring (`filter.dim`, 200ms `dimDuration`), so dim/desaturate/scale-down/
+  bob-stop transition in lockstep rather than as independently-timed effects.
+- Shuffle and Cover/Reveal (§3.3/PRD §4.3/§4.4) are unaffected — they act on every card regardless
+  of the active filter, since neither routes through `isInteractive()`.
+
+**Provisional:** every `MOTION.categoryFilter` value (dim/desaturate/scale timing, menu row timing,
+button icon-swap timing) is explicitly marked in code as a placeholder pending a dedicated tuning
+pass, same caveat as onboarding/tableNav/aboutNav (§6).
+
+---
+
 ## 4. Layout
 
 ### 4.1 Table grid (desktop)
@@ -459,6 +538,9 @@ Hover itself is communicated primarily through **motion** (lift, scale) and this
 | Route toggle icon re-emphasis (destination) | 180ms, 140ms delay | openEase | delayed so it lands at full size/opacity exactly as the thumb arrives (§3.3) — *placeholder, pending tuning* |
 | 404 page entrance | 500ms, 40px translateY | openEase | whole-block fade + upward translate on mount, self-contained (§3.12) — *placeholder, pending tuning* |
 | 404 card-spread deal-in/hold/deal-out loop | 220ms in (reused `aboutSectionReveal.duration`) / 1600ms hold / 220ms out (reverse of in) / 500ms gap | easeOut in, easeIn out | continuous loop, one card at a time (`aboutSectionReveal.stagger` gap); fan rest geometry reuses `MOTION.experienceFan.desktop` verbatim (§3.10/§3.12) — only `holdDuration`/`cycleGap` (`MOTION.notFound.cardLoop`) are new — *placeholder, pending tuning* |
+| Category-filter card dim/desaturate/scale | 200ms | ease-in-out | filtered-out cards: face opacity ×0.4, black overlay to 0.55 peak, uniform scale to 0.96, idle bob amplitude eased to 0 in lockstep (§3.15) — *placeholder, pending tuning* |
+| Category menu row fade+scale in/out | 120ms/row, 20ms stagger | easeOut | opacity 0→1, scale 0.92→1; closest-to-dock row animates first on open, reverses (furthest-first) on close (§3.15) — *placeholder, pending tuning* |
+| Category button count ↔ close-icon swap | 130ms/leg | easeOut | sequential via `AnimatePresence mode="wait"` — outgoing glyph shrinks+fades out, then incoming scales up+fades in (§3.15) — *placeholder, pending tuning* |
 
 **Interrupt behavior:** clicks on a card are ignored while the entrance deal is in progress — no queuing, no interrupt. The visitor simply has to wait the ~1–2s for the deal to finish before any card is interactive.
 

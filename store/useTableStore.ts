@@ -91,6 +91,14 @@ interface TableStore {
   openedCardIds: Set<string>;
 
   dockNavPhase: DockNavPhase;
+
+  /** Home dock category filter (ControlDock's left group) — null = "All
+   * projects", otherwise one of Project["category"]'s string values. Purely
+   * client-side; no relationship to dealComplete/openCardId, so its actions
+   * below carry no interaction-lock guard (unlike toggleRevealAll/shuffle). */
+  activeCategory: string | null;
+  categoryMenuOpen: boolean;
+
   // About page section-reveal (hooks/useAboutSectionsGate.ts): whether the
   // first-visit "dealt in" stagger for Hero/Run/Chips/Brands has already
   // played this session. Same "set once, never reset except a hard reload"
@@ -140,6 +148,10 @@ interface TableStore {
   /** Marks the About section-reveal as played. Guarded no-op if already
    * true — never resets (see aboutSectionsRevealed's doc comment above). */
   markAboutSectionsRevealed: () => void;
+
+  setActiveCategory: (title: string | null) => void;
+  toggleCategoryMenu: () => void;
+  closeCategoryMenu: () => void;
 }
 
 function initialCards(projects: Project[]): {
@@ -192,6 +204,10 @@ export const useTableStore = create<TableStore>()((set, get) => ({
   openedCardIds: new Set<string>(),
 
   dockNavPhase: "idle",
+
+  activeCategory: null,
+  categoryMenuOpen: false,
+
   aboutSectionsRevealed: false,
 
   hydrateProjects: (projects) => {
@@ -317,4 +333,8 @@ export const useTableStore = create<TableStore>()((set, get) => ({
     if (get().aboutSectionsRevealed) return;
     set({ aboutSectionsRevealed: true });
   },
+
+  setActiveCategory: (title) => set({ activeCategory: title }),
+  toggleCategoryMenu: () => set((s) => ({ categoryMenuOpen: !s.categoryMenuOpen })),
+  closeCategoryMenu: () => set({ categoryMenuOpen: false }),
 }));

@@ -311,4 +311,30 @@ export const MOTION = {
       cycleGap: 500, // ms — pause at the dealt-out (faded) position before the next loop
     },
   },
+
+  // Home dock category filter (ControlDock's new count button + menu,
+  // Card.tsx's dim/desaturate overlay for filtered-out cards). Not part of
+  // the design system yet — placeholder values pending visual tuning, same
+  // caveat as onboarding/tableNav/aboutNav above.
+  categoryFilter: {
+    dimDuration: 200, // ms — opacity/overlay transition when activeCategory changes
+    dimOpacityMul: 0.4, // face-material opacity multiplier when filtered out
+    desaturateOverlay: 0.55, // black-overlay mesh peak opacity when filtered out
+    dimScale: 0.96, // uniform scale applied to filtered-out cards
+    // Menu row entrance/exit (CategoryFilterMenu.tsx) — deliberately its own,
+    // faster timing rather than reusing aboutSectionReveal: a popover menu
+    // should snap open/closed quicker than a page-load reveal. Fade + a
+    // slight scale (no translateY) — staggerChildren = menuRowDuration +
+    // menuRowStagger reproduces delay_i = i * (duration + stagger), same
+    // recipe as aboutSectionReveal, just compressed.
+    menuRowDuration: 120, // ms — per-row fade/scale in/out
+    menuRowStagger: 20, // ms — gap between each row's start
+    menuRowRestScale: 0.92, // scale each row starts from (fade+scale in) / ends at (fade+scale out)
+    // Count-button icon swap (CategoryFilterButton.tsx) — the count digit
+    // and the open-menu "close" (X) icon never coexist, so the swap plays
+    // sequentially (AnimatePresence mode="wait"): the outgoing glyph
+    // shrinks+fades out, then the incoming one scales up+fades in.
+    buttonIconSwapDuration: 130, // ms — each leg (out, then in) of the swap
+    buttonIconSwapRestScale: 0.5, // scale each glyph starts from / shrinks to
+  },
 } as const;

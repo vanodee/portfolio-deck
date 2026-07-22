@@ -32,7 +32,7 @@ Resolve (or explicitly park) before starting the phase that depends on them:
 |---|---|---|
 | Flat `/[slug]` vs. nested `/[category]/[slug]` routing | Phase 12 | **Unresolved** — both still on the table |
 | Prefetch-all-light vs. lazy-fetch-detail-per-card | Phase 5 | Pick empirically once real content is fetchable; default lean is a light listing query prefetched + detail lazy-fetched on open |
-| New category-color schema field(s) on the `category` type | Phase 11 | **[USER]** — not yet added on the other project; default blue stays until it lands |
+| ~~New category-color schema field(s) on the `category` type~~ | Phase 11 | **Closed, not needed** — Phase 11 superseded by the client-side Category Filter (PRD §4.10, Design System §3.15); default blue stays permanently, no schema change to request |
 | Per-field fate of `isFlagship` / `date` / other no-CMS-source fields | Phases 3–4 | Deferred — decided per field when its section is actually built, some may be dropped entirely |
 
 ---
@@ -107,7 +107,9 @@ Resolve (or explicitly park) before starting the phase that depends on them:
       hand-picked fields (`STANDARD_BACK`/`FLAGSHIP_BACK`) that could drift from `isFlagship` —
       refactored so `back` is now *derived* from `isFlagship` via a single `.map()` pass in
       `data/projects.ts`, removing that drift risk. Same visual output as before (only `cashare`
-      is flagship/gold).
+      is flagship/gold). **Update (July 2026):** this is no longer an interim state — Phase 11 is
+      closed (superseded by the Category Filter, see that section below), so default-blue/
+      flagship-gold-only is now the permanent design, not a placeholder awaiting a schema field.
 
 **Gotchas**
 - A repo-wide grep during planning found no other category-string-dependent logic outside
@@ -539,15 +541,20 @@ the Vercel secret are actually in place.
 
 ---
 
-## Phase 11 — Category-based card-back color-coding (hardest, currently blocked)
+## Phase 11 — Category-based card-back color-coding (superseded, closed — July 2026)
 
-- [ ] **[USER]** Add new color field(s) to the `category` document schema on the other project
-      (nothing today stores a "card back color" per category — `SCHEMA.md` §1 confirms `category`
-      only has `title`/`slug`/`icon`/`image`/`description`).
-- [ ] Once available, query and wire that color into card-back rendering, replacing the interim
-      flat blue.
+**Closed, not just blocked.** This phase was always going to need a Sanity schema change on the
+other project (a per-category color field that doesn't exist — `SCHEMA.md` §1 confirms `category`
+only has `title`/`slug`/`icon`/`image`/`description`) before any work here was even possible. Rather
+than wait on that, the category-based visual-differentiation goal was solved a different way: a
+client-side Category Filter menu on the Home dock (PRD §4.10, Design System §3.15) that narrows
+which cards read as "in view," instead of color-tagging every card's back by category. That closes
+this phase out entirely — no schema field is being requested, and card backs stay default-blue /
+flagship-gold (`isFlagship`-only, `lib/cardBackStyle.ts`) permanently, not just "for now."
 
-**Blocked** until the schema change lands — no action possible from this repo until then.
+- [x] ~~Add new color field(s) to the `category` document schema on the other project~~ — not
+      needed, see above.
+- [x] ~~Query and wire that color into card-back rendering~~ — not needed, see above.
 
 ---
 
@@ -616,7 +623,7 @@ the Vercel secret are actually in place.
 | `SANITY_REVALIDATE_SECRET` | Phase 9 | `.env.local`, then Vercel at deploy |
 | CORS origin allowlist entry | Phase 5 (only if client-side fetch) | manage.sanity.io, project → API tab |
 | New webhook registration | Phase 9 | manage.sanity.io, project → API tab |
-| New `category` color field(s) | Phase 11 | Sanity Studio schema (other repo) |
+| ~~New `category` color field(s)~~ | ~~Phase 11~~ | **Not needed** — Phase 11 closed, superseded by the Category Filter |
 
 Prompt the user at the specific point each of these is actually needed — don't ask for all of them
 up front.

@@ -120,6 +120,12 @@ export default function ControlDock() {
     setLastOnHome(onHome);
     setChecked(!onHome);
     setLeftVisible(true);
+    // Safety net for navigation that didn't originate from a dock click
+    // (browser back/forward, a direct link) — CategoryFilterMenu's own
+    // dock-click handler covers the DockToggle case, but this covers every
+    // other way the route can change, so the filter button never gets
+    // stuck showing its close icon after a stale open menu survives a nav.
+    categoryFilter.closeCategoryMenu();
   }
 
   // Dock-wide lockout for the remainder of an in-flight route transition,

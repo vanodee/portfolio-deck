@@ -36,16 +36,24 @@ Radial gradient, center anchored at mid-top of the page.
 Two-layer liquid glass: an outer pill container and a brighter, nested
 button/logo layer, each with its own `backdrop-filter` blur — the first use
 of real backdrop blur anywhere in this codebase (previously the "glass" look
-was gradient-only, no blur).
+was gradient-only, no blur). **Revised (July 2026):** `dock-fill`/`dock-button-fill` are now
+themselves two-layer stacked `background`s — the original gradient, painted on top of a solid,
+near-opaque `glass-contrast-base` floor — because the gradient alone (transparent stops) let the
+dock wash out and lose icon/text legibility over light content behind it (white project cards on
+Home, white Experience Cards on About). The felt-background look is unchanged; only the
+light-backdrop case is fixed. Both `.categoryMenuRow` and `.categoryMenuRowCircle` (§3.15) inherit
+this automatically, since they already consume `dock-button-fill` by reference rather than
+duplicating the gradient.
 
 | Token | Value | Role |
 |---|---|---|
-| `dock-fill` | `linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(8,24,18,0.42) 45%, rgba(3,15,10,0.58) 100%)` | Outer pill container fill — tinted off `table-center`/`table-edge`, not neutral black |
+| `glass-contrast-base` | `rgba(3,15,10,0.6)` | Solid near-opaque base layer stacked beneath `dock-fill`/`dock-button-fill` (same rgb as `table-edge`/`dock-shadow`, not a new hue) — holds a dark floor under the glass regardless of backdrop |
+| `dock-fill` | `linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(8,24,18,0.42) 45%, rgba(3,15,10,0.58) 100%), glass-contrast-base` | Outer pill container fill — tinted off `table-center`/`table-edge`, not neutral black; two-layer stack (see above) |
 | `dock-border` | `rgba(255,255,255,0.32)` | Outer pill 1px outline |
 | `dock-shadow` | `0px 16px 32px rgba(3,15,10,0.45)` | Outer pill elevation shadow (same rgb/logic as `shadow-opened`, scaled down) |
 | `dock-blur` | `blur(16px) saturate(1.6)` | Outer pill `backdrop-filter` |
 | `dock-button-border` | `rgba(255,255,255,0.3)` | 1px button outline |
-| `dock-button-fill` | `linear-gradient(135deg, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.3) 85%)` | Glass-chip fill — brightened/widened so buttons still read as a distinct layer over the now-visible outer pill fill |
+| `dock-button-fill` | `linear-gradient(135deg, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.3) 85%), glass-contrast-base` | Glass-chip fill — brightened/widened so buttons still read as a distinct layer over the now-visible outer pill fill; two-layer stack (see above) |
 | `dock-button-shadow` | `4px 4px 8px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.25)` | Drop shadow + inset specular highlight/shade, all dock buttons — dropped only while a button is actively pressed (§3.3) |
 | `dock-button-blur` | `blur(20px) saturate(1.4)` | Per-button `backdrop-filter` |
 | `dock-icon` | `#FFFFFF` | Monochrome icon fill — eye, shuffle, resume, about (Home dock); email, linkedin, twitter, resume, cards (About dock, §3.6) |
@@ -138,7 +146,7 @@ Note: Light appears once (category/date micro-label) despite the "Regular/Medium
 - Watermark: logo mark at 5% opacity, 106×98px, sits behind the text block
 
 ### 3.3 Control Dock
-- Two-layer liquid glass: an outer pill container (`dock-fill`, `dock-border`, `dock-shadow`, `dock-blur` backdrop-filter) with the button/logo group as a second, brighter nested glass layer inside it — not a flat frosted-chip look, a real `backdrop-filter` blur that refracts the table/cards behind the dock
+- Two-layer liquid glass: an outer pill container (`dock-fill`, `dock-border`, `dock-shadow`, `dock-blur` backdrop-filter) with the button/logo group as a second, brighter nested glass layer inside it — not a flat frosted-chip look, a real `backdrop-filter` blur that refracts the table/cards behind the dock. **Revised (July 2026):** `dock-fill`/`dock-button-fill` are each a stacked `background` — the gradient on top of a solid `glass-contrast-base` floor (§1.4) — so the glass keeps a dark floor and its white icons/text stay legible over light content (white cards on Home/About), not just over the dark felt.
 - Layout is CSS Grid (`grid-template-columns: 1fr auto 1fr`), not flexbox — the two equal-width outer tracks guarantee the center logo stays truly centered regardless of how many buttons sit in each group (flex `justify-content:space-between` only splits free space between adjacent siblings, so it can't guarantee true centering once the groups hold unequal button counts)
 - Explicit pill width above the 767px breakpoint: `min(500px, calc(100vw - 64px))` — no longer shrink-wrapped; 16px horizontal padding, 8px vertical, 16px column gap between groups and logo, 16px gap within each group. Below 767px the dock is no longer a horizontal pill at all — see the responsive-stacking bullet below.
 - **Left group** (card controls, pinned to the pill's left edge): **Category Filter** (count/close-icon button + popover menu, §3.15 — net-new, added after this section was last substantively revised; supersedes the previously-planned category-based card-back color-coding, PRD §4.10/§10), **Visibility Toggle** (eye), **Shuffle**
@@ -434,9 +442,17 @@ tokens), but its content is live state rather than a static icon:
 - **Hover:** a partial crossfade of the same `::before` gradient overlay `.buttonActive` brightens
   fully (§3.3) — a row hovered while also active doesn't dim back down (specificity guard).
 - **Dismissal:** Escape, click-outside (full-screen transparent backdrop below the dock's own
-  z-index, so the count button stays clickable through it to toggle-close), or selecting any row
-  (including re-selecting the currently-active one) all close the menu; "All projects" clears the
-  filter.
+  z-index, so the count button stays clickable through it to toggle-close), selecting any row
+  (including re-selecting the currently-active one), or clicking **any other dock button** all
+  close the menu; "All projects" clears the filter. **Resolved bug (July 2026):** the backdrop
+  alone couldn't catch clicks on the dock's other buttons (Eye/Reveal, Shuffle, Resume, the
+  Home↔About toggle) — they sit above the backdrop in z-index — so the menu could survive a Home↔
+  About navigation and leave the count button stuck showing its close icon on return. Fixed with a
+  capture-phase click listener scoped to the dock element (added/removed via the same
+  `useEffect`-per-`categoryMenuOpen` idiom as the Escape handler above), which closes the menu
+  without swallowing the click — the clicked button's own action (navigate, shuffle, etc.) still
+  fires normally in the same click. A parallel safety net closes the menu on any route change that
+  didn't originate from a dock click at all (browser back/forward, a direct link).
 
 **Table effect (`Card.tsx`)** — cards outside the active category:
 - Fade toward `MOTION.categoryFilter.dimOpacityMul` (0.4×) face opacity, combined via `to()` with

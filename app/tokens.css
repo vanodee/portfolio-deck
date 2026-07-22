@@ -14,22 +14,28 @@
   --card-front-text: #1c1c1c;
 
   /* §1.4 Control dock */
-  --dock-fill: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(8, 24, 18, 0.42) 45%,
-    rgba(3, 15, 10, 0.58) 100%
-  );
+  --glass-contrast-base: rgba(3, 15, 10, 0.6);
+
+  --dock-fill:
+    linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(8, 24, 18, 0.42) 45%,
+      rgba(3, 15, 10, 0.58) 100%
+    ),
+    var(--glass-contrast-base);
 
   --dock-border: rgba(255, 255, 255, 0.32);
   --dock-shadow: 0px 16px 32px rgba(3, 15, 10, 0.45);
   --dock-blur: blur(16px) saturate(1.6);
   --dock-button-border: rgba(255, 255, 255, 0.3);
-  --dock-button-fill: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.06) 15%,
-    rgba(255, 255, 255, 0.3) 85%
-  );
+  --dock-button-fill:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 15%,
+      rgba(255, 255, 255, 0.3) 85%
+    ),
+    var(--glass-contrast-base);
   --dock-button-shadow:
     4px 4px 8px rgba(0, 0, 0, 0.45),
     inset 0 1px 1px rgba(255, 255, 255, 0.55),

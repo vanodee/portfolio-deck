@@ -134,6 +134,33 @@ export default function CategoryFilterMenu({ anchorRef, dockRef }: CategoryFilte
     return () => window.removeEventListener("keydown", onKey);
   }, [categoryMenuOpen, closeCategoryMenu]);
 
+  // The backdrop (z-index 9) sits below the dock (z-index 10) so the filter
+  // button itself stays clickable through it — but that means clicks on any
+  // of the dock's OTHER buttons (Eye, Shuffle, Resume, the Home<->About
+  // toggle) never reach the backdrop at all, leaving the menu "open" in the
+  // store indefinitely (e.g. surviving a Home->About->Home round trip,
+  // leaving the button stuck on its close icon). Fixed by listening for
+  // clicks on the dock itself, in the capture phase, ahead of every
+  // button's own bubble-phase onClick — closing the menu without
+  // stopPropagation/preventDefault, so the clicked button's own action
+  // (navigate, shuffle, etc.) still fires normally right after, in the same
+  // click. The anchorRef check excludes the filter button itself, which
+  // already opens/closes the menu via its own toggle — without this guard,
+  // this handler would close the menu a beat before the button's own
+  // handler re-opened it.
+  useEffect(() => {
+    if (!categoryMenuOpen) return;
+    const dock = dockRef.current;
+    if (!dock) return;
+    const onCapture = (e: MouseEvent) => {
+      if (!anchorRef.current?.contains(e.target as Node)) {
+        closeCategoryMenu();
+      }
+    };
+    dock.addEventListener("click", onCapture, true);
+    return () => dock.removeEventListener("click", onCapture, true);
+  }, [categoryMenuOpen, dockRef, anchorRef, closeCategoryMenu]);
+
   if (!rendered) return null;
 
   const desktopLeft = breakpoint === "desktop" && left !== null;

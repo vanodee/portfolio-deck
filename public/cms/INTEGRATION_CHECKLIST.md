@@ -464,7 +464,7 @@ phase log below as originally written for history.
 
 ---
 
-## Phase 9 — Revalidation webhook (hard) — ✅ Code done 2026-07-17, webhook registration pending deployment
+## Phase 9 — Revalidation webhook (hard) — ✅ Done 2026-07-24 (webhook registered post-deployment)
 
 - [x] Build `/api/revalidate` (signature verification via `next-sanity/webhook`'s `parseBody()`,
       checked against a secret; `revalidateTag(_type, { expire: 0 })` on match). **Done**
@@ -483,24 +483,22 @@ phase log below as originally written for history.
       `getFeaturedTools()` are tagged `["siteSettings"]`/`["tools"]` respectively — the existing
       `/api/revalidate` handler needed no changes to pick these up, since it already revalidates
       whatever `_type` the webhook payload names.
-- [ ] **[USER]** Register a new, separate webhook on the shared Sanity project pointed at this
+- [x] **[USER]** Register a new, separate webhook on the shared Sanity project pointed at this
       app's `/api/revalidate` — this coexists independently alongside the old site's existing
-      webhook; confirm no conflict, both simply fire independently per document publish.
-      **Deliberately pending deployment** — Sanity's webhook fires from their cloud infrastructure,
-      which cannot reach a local machine at all (not a "swap the URL later" situation, a hard
-      reachability dead end without a tunnel). Register this once a real Vercel URL exists.
-- [x] **[USER]** Provide `SANITY_REVALIDATE_SECRET` for `.env.local` and, later, Vercel. **`.env.local`
-      done** (already present, used directly in this phase's local verification). **Vercel still
-      pending** — same deployment dependency as the webhook registration above.
+      webhook; confirmed no conflict, both simply fire independently per document publish.
+      **Done 2026-07-24** — registered at manage.sanity.io (project → API → Webhooks) once the
+      real `https://table.stevano.dev` URL existed, per Sanity's cloud infra having no way to reach
+      a local machine pre-deploy.
+- [x] **[USER]** Provide `SANITY_REVALIDATE_SECRET` for `.env.local` and, later, Vercel. **Done** —
+      present in `.env.local` (used in this phase's local verification) and confirmed matching in
+      Vercel's project env vars.
 
-**Note for whenever deployment happens**: Phase 5 flagged that `npm run build` shows every route as
-fully static-prerendered (`○ Static`), which raised a question of whether `revalidateTag` actually
-busts a statically-generated page or only matters for genuinely dynamic rendering. This should
-resolve itself correctly on Vercel (their on-demand ISR infrastructure honors `revalidateTag` against
-statically-prerendered pages using tagged fetches), but it's a production-platform behavior
-`next dev` can't meaningfully prove either way — worth a real end-to-end check (publish a test edit
-in the Studio, confirm the deployed home page updates without a redeploy) once both the webhook and
-the Vercel secret are actually in place.
+**Resolved 2026-07-24**: Phase 5 flagged that `npm run build` shows every route as fully
+static-prerendered (`○ Static`), which raised a question of whether `revalidateTag` actually busts a
+statically-generated page or only matters for genuinely dynamic rendering. Confirmed on Vercel:
+publishing a test edit in the Studio updated the deployed home page without a manual redeploy —
+their on-demand ISR infrastructure honors `revalidateTag` against statically-prerendered pages using
+tagged fetches, as expected.
 
 ---
 
@@ -622,9 +620,9 @@ record.
 |---|---|---|
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | Phase 1 | `.env.local`, then Vercel at deploy |
 | `NEXT_PUBLIC_SANITY_DATASET` | Phase 1 | `.env.local`, then Vercel at deploy |
-| `SANITY_REVALIDATE_SECRET` | Phase 9 | `.env.local`, then Vercel at deploy |
+| `SANITY_REVALIDATE_SECRET` | Phase 9 | **Done** — set in `.env.local` and confirmed matching in Vercel's project env vars |
 | ~~CORS origin allowlist entry~~ | ~~Phase 5~~ | **Done** — `localhost:3000` + `https://table.stevano.dev` both added at manage.sanity.io, project → API tab |
-| New webhook registration | Phase 9 | **Pending, post-deployment** — manage.sanity.io, project → API tab; see root `CHECKLIST.md`'s "Post-deployment actions" |
+| New webhook registration | Phase 9 | **Done 2026-07-24** — manage.sanity.io, project → API tab; see root `CHECKLIST.md`'s "Post-deployment actions" |
 | ~~New `category` color field(s)~~ | ~~Phase 11~~ | **Not needed** — Phase 11 closed, superseded by the Category Filter |
 
 Prompt the user at the specific point each of these is actually needed — don't ask for all of them

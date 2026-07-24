@@ -4,13 +4,16 @@ import OpenCardOverlay from "@/components/dom/OpenCardOverlay";
 import ChipStackTracker from "@/components/dom/ChipStackTracker";
 import OnboardingScreen from "@/components/dom/OnboardingScreen";
 
-const title = "Stevano Peters — Pick a Card";
+const title = "Stevano Peters | The Card Table Portfolio";
 const description =
-  "An interactive card-table portfolio. Every project is a playing card: deal, shuffle, reveal, and open.";
+  "Stevano Peters' Card Table Design Portfolio is a playful, interactive take on showcasing product design and frontend work.";
 
 export const metadata: Metadata = {
   title,
   description,
+  alternates: {
+    canonical: "https://stevano.dev/",
+  },
   openGraph: {
     title,
     description,
@@ -30,6 +33,8 @@ export const metadata: Metadata = {
     title,
     description,
     images: ["/assets/og_image_large.png"],
+    site: "@vano_dee",
+    creator: "@vano_dee",
   },
 };
 

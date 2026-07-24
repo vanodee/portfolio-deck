@@ -77,10 +77,7 @@ export default function AboutContent() {
           <div className={styles.heroText}>
             <h1 className={styles.heroHeading}>Nice to meet you...</h1>
             <p className={styles.heroIntro}>
-              I&apos;m someone whose work sits between branding, UX, and frontend engineering —
-              in simpler terms, a designer who codes. I care about hierarchy, accessibility,
-              performance… and naming layers properly. I create functional, user-friendly
-              designs.
+              I sit at the intersection of design, engineering, and AI-assisted building, turning ideas into products people actually enjoy using. This site is one example: designed, built, and brought to life by me, top to bottom.
             </p>
             <div className={styles.statChips}>
               <Chip
@@ -125,20 +122,13 @@ export default function AboutContent() {
           <p className={styles.subheading}>How I play the game</p>
           <div className={styles.houseRulesBody}>
             <p className={styles.bodyParagraph}>
-              I&apos;ve spent enough years toggling between Figma, code editors, and brand decks
-              to know that good design doesn&apos;t survive without structure. What began in
-              branding evolved into UX systems and frontend builds. Today, I design with
-              constraints in mind and build with intent.
+              I design and build digital products (branding, UX, and frontend development) and treat AI as a real part of how I work, not a shortcut around it. The result is faster execution without losing craft or intention.
             </p>
             <p className={styles.bodyParagraph}>
-              My work focuses on design systems, scalable interfaces, and digital experiences
-              built for longevity — not just launch-day screenshots. The best products feel
-              effortless because the hard thinking already happened. My goal isn&apos;t just to
-              make things look good — it&apos;s to make them make sense.
+              This portfolio is the clearest proof of that. I designed it, built it, and used Generative AI tools throughout the process to move from concept to a fully working, interactive site (the kind of project most people would&apos;ve scoped down). It reflects how I actually work: hands-on, resourceful, and comfortable owning a project end to end.
             </p>
             <p className={styles.bodyParagraph}>
-              Still refining. Still building. Always zoomed in on the canvas, but never losing
-              sight of the bigger picture.
+              Still refining. Still building. Always looking for the next thing worth making properly.
             </p>
           </div>
         </section>

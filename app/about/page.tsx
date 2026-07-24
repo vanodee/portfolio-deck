@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import FeltBackground from "@/components/dom/FeltBackground";
 
-const title = "Stevano Peters — About";
+const title = "About Stevano Peters | The Card Table Portfolio";
 const description =
-  "A designer who codes — branding, UX, and frontend engineering. Meet Stevano Peters and see how this table came together.";
+  "Meet Stevano Peters, the designer and developer behind the Card Table Portfolio. Branding, UX, and frontend engineering, dealt one card at a time.";
 
 export const metadata: Metadata = {
   title,
   description,
+  alternates: {
+    canonical: "https://stevano.dev/about",
+  },
   openGraph: {
     title,
     description,
@@ -27,6 +30,8 @@ export const metadata: Metadata = {
     title,
     description,
     images: ["/assets/og_image_large.png"],
+    site: "@vano_dee",
+    creator: "@vano_dee",
   },
 };
 

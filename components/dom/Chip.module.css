@@ -30,6 +30,21 @@
   /* Reserves chip + gap + label slot at rest, so the hover-lift never
      reflows sibling chips and the label has a stable landing spot. */
   height: calc(var(--chip-h) + var(--chip-gap) + var(--chip-label-h));
+  /* A real <button> now (touch-tap reveal, DS §3.7/§3.8) — reset UA chrome
+     so it stays visually identical to the plain wrapper div it replaced. */
+  display: block;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.chipWrapperTool:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 4px;
 }
 
 .chip {
@@ -97,10 +112,6 @@
   border-radius: 2.5px;
   object-fit: contain;
   display: block;
-  /* Reference logos (e.g. Webflow) carry their own colored badge baked
-     into the asset; a plain-white placeholder icon needs this to read
-     against a light chip color. Harmless no-op tint for full-color logos. */
-  background: rgba(0, 0, 0, 0.18);
 }
 
 .chipLight {
@@ -140,20 +151,24 @@
   transition: transform 320ms ease-in-out, filter 320ms ease-in-out;
 }
 
-/* JS-driven equivalent of the :hover block below (About page section-reveal,
-   hooks/useEntranceHoldReveal.ts) — a tool chip arrives already in this pose
-   during its entrance, then settles back to idle via the unconditional
-   .chipLabel/.chipWrapperTool .chip transitions above. Deliberately outside
-   the (hover: hover) guard below since this must also work on touch. Same
-   declarations as :hover, verbatim, so a JS-forced reveal and a real mouse
-   hover look identical. */
-.chipWrapperTool.forceRevealed .chip {
+/* JS-driven equivalent of the :hover block below — covers three cases that
+   have no CSS :hover equivalent: the entrance "dealt in" forced reveal
+   (hooks/useEntranceHoldReveal.ts), a real mouse hover (mirrored into JS too
+   so aria-pressed stays accurate), and the touch-tap reveal (Chip.tsx's
+   handleClick, same mechanic as BrandCard, DS §3.8) — exclusivity across the
+   grid is owned by AboutContent.tsx, one tool chip revealed at a time. A
+   tool chip arrives already in this pose during its entrance, then settles
+   back to idle via the unconditional .chipLabel/.chipWrapperTool .chip
+   transitions above. Deliberately outside the (hover: hover) guard below
+   since tap/touch needs this too. Same declarations as :hover, verbatim, so
+   every trigger looks identical. */
+.chipWrapperTool.revealed .chip {
   transform: translateY(-14px) scale(1.03);
   filter: drop-shadow(var(--shadow-hover));
   transition: transform 220ms ease-out, filter 220ms ease-out;
 }
 
-.chipWrapperTool.forceRevealed .chipLabel {
+.chipWrapperTool.revealed .chipLabel {
   opacity: 1;
   transform: translate(-50%, 0);
   transition: opacity 220ms ease-out, transform 220ms ease-out;

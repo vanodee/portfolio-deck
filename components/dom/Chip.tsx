@@ -2,9 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 import type { CSSProperties } from "react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { motion } from "framer-motion";
 import { MOTION } from "@/lib/motion";
+import { chipTint } from "@/lib/chipColor";
 import { useEntranceHoldReveal } from "@/hooks/useEntranceHoldReveal";
 import styles from "./Chip.module.css";
 
@@ -34,6 +35,10 @@ interface ToolChipData extends RevealProps {
    * pose before settling to idle — omitted/0 for no forced-reveal at all
    * (e.g. Hero's stat chips never pass this). */
   revealHoldMs?: number;
+  /** Touch-tap reveal state, controlled by the parent for exclusivity across
+   * the grid — same mechanic as BrandCard (DS §3.8). */
+  revealed: boolean;
+  onToggle: () => void;
 }
 
 type ChipProps = ({ variant: "stat" } & StatChipData) | ({ variant: "tool" } & ToolChipData);
@@ -79,8 +84,43 @@ export default function Chip(props: ChipProps) {
   );
   const forceRevealed = props.variant === "tool" && forceRevealedResult;
 
+  // Touch-tap reveal (BrandCard's exact mechanic, DS §3.8) — real mouse
+  // hover is handled by the existing (hover: hover) CSS below and doesn't
+  // need this state; it's tracked here only so it can join forceRevealed/
+  // tapRevealed into one JS-driven `.revealed` class for aria-pressed and
+  // for touch/keyboard, which have no CSS :hover equivalent. Called
+  // unconditionally regardless of variant (rules-of-hooks); only tool chips
+  // wire up onPointerEnter/Leave/Click below.
+  const [hovering, setHovering] = useState(false);
+  const handlePointerEnter = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse") setHovering(true);
+  };
+  const handlePointerLeave = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse") setHovering(false);
+  };
+  // Real mouse clicks rely on hover alone; keyboard activation (Enter/Space
+  // fires a click with detail === 0) and touch-only devices are the only
+  // inputs that toggle the tap-controlled `revealed` state — identical
+  // gating to BrandCard's handleClick.
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (props.variant !== "tool") return;
+    const keyboardActivated = e.detail === 0;
+    const touchOnly =
+      typeof window !== "undefined" &&
+      !window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (keyboardActivated || touchOnly) props.onToggle();
+  };
+  const tapRevealed = props.variant === "tool" && props.revealed;
+  const showLabel = forceRevealed || hovering || tapRevealed;
+
+  // Tool colors from CMS are tuned ~90% lightness for dark text on a tag
+  // pill elsewhere (OpenCardOverlay); the chip face's own fixed white
+  // elements (edge-spot marks, gloss) need a darker read of the same hue —
+  // see lib/chipColor.ts. Stat chips pass CSS var()s, not hex, and skip it.
+  const structureColor = props.variant === "tool" ? chipTint(props.color) : props.color;
+
   const chip = (
-    <div className={styles.chip} style={{ "--chip-color": props.color } as CSSProperties}>
+    <div className={styles.chip} style={{ "--chip-color": structureColor } as CSSProperties}>
       <svg
         className={styles.chipStructure}
         viewBox="0 0 200 202"
@@ -267,16 +307,22 @@ export default function Chip(props: ChipProps) {
   }
 
   return (
-    <motion.div
-      className={`${styles.chipWrapperTool} ${forceRevealed ? styles.forceRevealed : ""}`}
+    <motion.button
+      type="button"
+      className={`${styles.chipWrapperTool} ${showLabel ? styles.revealed : ""}`}
       initial={entranceInitial}
       animate={entranceAnimate}
       transition={entranceTransition}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+      onClick={handleClick}
+      aria-pressed={showLabel}
+      aria-label={props.name}
     >
       {chip}
       <div className={styles.chipLabel} style={{ background: props.color }} aria-hidden="true">
         {props.name}
       </div>
-    </motion.div>
+    </motion.button>
   );
 }

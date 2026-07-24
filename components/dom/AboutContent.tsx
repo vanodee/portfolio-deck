@@ -24,6 +24,7 @@ import styles from "./AboutContent.module.css";
 // order per public/assets/refereneces/About Page.png.
 export default function AboutContent() {
   const [revealedBrandId, setRevealedBrandId] = useState<string | null>(null);
+  const [revealedToolId, setRevealedToolId] = useState<string | null>(null);
   const experience = useTableStore((s) => s.experience);
   const clients = useTableStore((s) => s.clients);
   const tools = useTableStore((s) => s.tools);
@@ -154,6 +155,10 @@ export default function AboutContent() {
                 logoSrc={tool.logoSrc}
                 logoAlt={tool.logoAlt}
                 color={tool.color}
+                revealed={revealedToolId === tool.id}
+                onToggle={() =>
+                  setRevealedToolId((current) => (current === tool.id ? null : tool.id))
+                }
                 revealArmed={armed}
                 revealTriggered={toolsTriggered}
                 revealDelayMs={index * (MOTION.aboutSectionReveal.duration + MOTION.aboutSectionReveal.stagger)}

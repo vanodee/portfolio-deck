@@ -25,9 +25,11 @@ const meowScript = Meow_Script({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://table.stevano.dev"),
   title: "Stevano Peters — Pick a Card",
   description:
     "An interactive card-table portfolio. Every project is a playing card: deal, shuffle, reveal, and open.",
+  robots: { index: false, follow: false },
 };
 
 export default async function RootLayout({

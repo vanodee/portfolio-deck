@@ -11,6 +11,34 @@ section-reveal entrance (PRD §4.8, DS §3.11/§7 item 18). Phase 2 (Sanity
 CMS integration) is also done — see `public/cms/INTEGRATION_CHECKLIST.md`
 for that phase's own detailed log — this list is everything that remains.
 
+## Post-deployment actions (do once a real production URL exists)
+
+- [ ] **Register the Sanity webhook** pointed at `https://table.stevano.dev/api/revalidate` —
+      deliberately deferred pre-deploy since Sanity's cloud webhook infra can't reach localhost.
+      See `public/cms/INTEGRATION_CHECKLIST.md` Phase 9 for the full detail (handler is already
+      built and verified locally with a real signed test request).
+- [ ] **Confirm `SANITY_REVALIDATE_SECRET` is set in Vercel's project env vars** (already set in
+      `.env.local`; Vercel's copy gets entered during the deploy itself, but worth a second check
+      once live, since the webhook above depends on it matching).
+- [ ] **End-to-end revalidation check** — once the webhook and the Vercel secret are both in
+      place: publish a test edit in the Sanity Studio and confirm the deployed home page updates
+      without a manual redeploy (`public/cms/INTEGRATION_CHECKLIST.md` Phase 9 flags this as
+      unprovable from `next dev` alone — Vercel's on-demand ISR is what actually needs verifying).
+
+## Content & data gaps (not blocking, worth a deliberate call)
+
+- [ ] **`isFlagship` is hardcoded**, not CMS-driven — `lib/getProjects.ts` flags whichever project
+      happens to be first in the fetch order as flagship (`i === 0`), with a `TODO` to replace once
+      a real field exists in the other project's Sanity schema. Confirm the first-fetched project
+      is actually the one meant to read as flagship in production, or wire the real field first.
+- [ ] **Only 2 of 3 photo slots filled** in the About page's Hero photo spread (`data/photos.ts`) —
+      `PhotoCardSpread.tsx` already supports a 3rd card, just no 3rd real photo was provided yet.
+      Confirm 2 is the intended final count or add one.
+- [ ] **Confirm `resumeUrl` is actually populated** in Sanity's `siteSettings` document — if it's
+      unset or the fetch fails, `lib/getSiteSettings.ts` silently degrades the About page's Resume
+      link to a dead `#` anchor rather than erroring, so a content gap here wouldn't be obvious from
+      testing alone.
+
 ## Phase 1 — stretch (cut-line items, PRD §4.7 / §9)
 
 - [ ] **Shuffle-wink flourish** — three shuffles in a row triggers a riffle-with-wink flourish at the deck (`shuffleCount` already tracked in `store/useTableStore.ts`)
@@ -56,7 +84,12 @@ autoplay video, revalidation webhook, About page).
       is being requested; card backs stay default-blue/flagship-gold permanently.
 - [x] ~~Search / filter~~ — filter-by-category is built (see above); full-text search and sort
       remain out of scope (PRD §2 non-goals).
-- [ ] **Deep-linking** — URL routes to a specific opened card. Corresponds to the integration checklist's **Phase 12 — parked**, not blocking anything else.
+- [x] ~~**Deep-linking** — URL routes to a specific opened card.~~ Closed out as a deliberate
+      won't-do, not deferred — the existing Next.js portfolio (stevano.dev) already owns the
+      "share a specific project" job with real SEO/semantic HTML, and a deep link would let
+      visitors skip past this app's actual value (the crafted onboarding/deal sequence and
+      self-directed table exploration). Routes stay exactly `/` and `/about`, permanently.
+      Corresponds to the integration checklist's **Phase 12 — closed** (PRD §9/§10).
 
 ## Phase 4 — open decision (PRD §9)
 

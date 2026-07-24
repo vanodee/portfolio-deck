@@ -30,7 +30,7 @@ Resolve (or explicitly park) before starting the phase that depends on them:
 
 | Decision | Blocks | Status |
 |---|---|---|
-| Flat `/[slug]` vs. nested `/[category]/[slug]` routing | Phase 12 | **Unresolved** — both still on the table |
+| ~~Flat `/[slug]` vs. nested `/[category]/[slug]` routing~~ | Phase 12 | **Closed, N/A** — no project routing being built; deep-linking itself was cut as a goal, see PRD §9/§10 |
 | Prefetch-all-light vs. lazy-fetch-detail-per-card | Phase 5 | Pick empirically once real content is fetchable; default lean is a light listing query prefetched + detail lazy-fetched on open |
 | ~~New category-color schema field(s) on the `category` type~~ | Phase 11 | **Closed, not needed** — Phase 11 superseded by the client-side Category Filter (PRD §4.10, Design System §3.15); default blue stays permanently, no schema change to request |
 | Per-field fate of `isFlagship` / `date` / other no-CMS-source fields | Phases 3–4 | Deferred — decided per field when its section is actually built, some may be dropped entirely |
@@ -227,9 +227,11 @@ phase log below as originally written for history.
       parallel with the (content-independent) animation rather than gating it. The store's
       `openCardId`/`openPhase` are untouched by this — no new store field needed.
 - [x] Add CORS origins **[USER]** (prod + local dev) at manage.sanity.io *only if* any fetch ends
-      up client-side rather than server-side-only. **Done** — you added `localhost:3000` ahead of
-      this phase (prompted by Phase 4's CORS finding). The detail fetch (`getProjectDetail`,
-      triggered client-side on card open) is exactly the case this covers.
+      up client-side rather than server-side-only. **Done** — `localhost:3000` was added ahead of
+      this phase (prompted by Phase 4's CORS finding), and the production origin
+      (`https://table.stevano.dev`) was added 2026-07-24 ahead of the Vercel deploy. The detail
+      fetch (`getProjectDetail`, triggered client-side on card open) is exactly the case this
+      covers.
 
 **New decisions made this phase (confirmed with you):**
 - **No fallback on fetch failure.** The listing fetch is load-bearing — a failure throws and
@@ -558,24 +560,23 @@ flagship-gold (`isFlagship`-only, `lib/cardBackStyle.ts`) permanently, not just 
 
 ---
 
-## Phase 12 — Routing decision & implementation (open-ended, parked)
+## Phase 12 — Routing decision & implementation (closed — won't-do, July 2026)
 
-- [ ] Decide flat `/[slug]` vs. nested `/[category]/[slug]` (see "Open decisions" table above).
-- [ ] If nested: build resolver/redirect behavior for bare `/projects` and `/projects/[category]`
-      hits, since this app has no equivalent listing pages today.
-- [ ] If flat: rely on the existing catch-all `app/not-found.tsx` for anything else; confirm via
-      Phase 2's dataset spot-check that no current cross-category slug collisions exist, and accept
-      the risk of a future one.
-- [ ] Design the cold-load problem: landing directly on a deep-linked opened card before the deck
-      has been dealt has no defined animation today (onboarding gate, `dealComplete` guard in
-      `useTableStore.ts`) — this is inherited from the PRD's own Phase 3 deep-linking item, not
-      something this Sanity integration is responsible for solving, but it blocks any real routing
-      implementation regardless of which slug shape is chosen.
+**Closed, not just parked — deliberately rejected, not deferred.** This was never blocked on a
+technical decision (flat vs. nested slugs); deep-linking itself was cut as a goal. The existing
+Next.js portfolio (stevano.dev) already owns the "share a specific project" job with real SEO and
+semantic HTML — duplicating that here adds no capability. This app's actual value is the crafted
+onboarding/deal sequence and self-directed table exploration; a deep link bypasses exactly that,
+working against the site's purpose rather than extending it. Routes stay exactly `/` and `/about`,
+permanently. See `card-table-portfolio-prd.md` §9 (Phase 3 entry) and §10 for the resolved decision
+record.
 
-**Gotchas**
-- Deep-linking to an opened card via URL was already scoped as PRD Phase 3, independent of the CMS
-  integration — this phase can be deferred indefinitely without blocking anything else in this
-  checklist.
+- [x] ~~Decide flat `/[slug]` vs. nested `/[category]/[slug]`~~ — moot, no project routing will be
+      built.
+- [x] ~~Resolver/redirect behavior for bare `/projects` and `/projects/[category]` hits~~ — moot,
+      same reason.
+- [x] ~~Cold-load problem: landing directly on a deep-linked opened card before the deck has been
+      dealt~~ — moot, same reason.
 
 ---
 
@@ -583,8 +584,9 @@ flagship-gold (`isFlagship`-only, `lib/cardBackStyle.ts`) permanently, not just 
 
 - **`category->title`, never `categoryName`** — the latter is a Studio-only sync convenience field
   with no integrity guarantee for a read consumer (`SCHEMA.md` §3a).
-- **Slug uniqueness is compound-scoped** (`slug` + `category`), never globally unique — matters for
-  Phase 12 regardless of which routing shape wins.
+- **Slug uniqueness is compound-scoped** (`slug` + `category`), never globally unique — this was
+  the reasoning behind evaluating flat vs. nested project routing before Phase 12 was closed out
+  as a won't-do; kept here as historical context, not a live blocker for anything.
 - **Image hotspot has no canvas equivalent** — must be custom-built if ever needed; not assumed by
   default.
 - **Video fields are plain file assets, not streaming** — bandwidth/perf cost scales directly with
@@ -621,8 +623,8 @@ flagship-gold (`isFlagship`-only, `lib/cardBackStyle.ts`) permanently, not just 
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | Phase 1 | `.env.local`, then Vercel at deploy |
 | `NEXT_PUBLIC_SANITY_DATASET` | Phase 1 | `.env.local`, then Vercel at deploy |
 | `SANITY_REVALIDATE_SECRET` | Phase 9 | `.env.local`, then Vercel at deploy |
-| CORS origin allowlist entry | Phase 5 (only if client-side fetch) | manage.sanity.io, project → API tab |
-| New webhook registration | Phase 9 | manage.sanity.io, project → API tab |
+| ~~CORS origin allowlist entry~~ | ~~Phase 5~~ | **Done** — `localhost:3000` + `https://table.stevano.dev` both added at manage.sanity.io, project → API tab |
+| New webhook registration | Phase 9 | **Pending, post-deployment** — manage.sanity.io, project → API tab; see root `CHECKLIST.md`'s "Post-deployment actions" |
 | ~~New `category` color field(s)~~ | ~~Phase 11~~ | **Not needed** — Phase 11 closed, superseded by the Category Filter |
 
 Prompt the user at the specific point each of these is actually needed — don't ask for all of them

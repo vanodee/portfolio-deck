@@ -1,9 +1,33 @@
 import type { Metadata } from "next";
 import FeltBackground from "@/components/dom/FeltBackground";
 
+const title = "Stevano Peters — About";
+const description =
+  "A designer who codes — branding, UX, and frontend engineering. Meet Stevano Peters and see how this table came together.";
+
 export const metadata: Metadata = {
-  title: "Stevano Peters — About",
-  description: "About Stevano Peters — Card Table Portfolio.",
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    type: "website",
+    url: "/about",
+    images: [
+      {
+        url: "/assets/og_image_large.png",
+        width: 1200,
+        height: 630,
+        alt: "Card Table Portfolio",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/assets/og_image_large.png"],
+  },
 };
 
 // This route resolves PRD §10's "About panel treatment" as its own route,

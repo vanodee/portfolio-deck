@@ -7,13 +7,13 @@ import type { PhotoCardData } from "./types";
 export const PHOTOS: PhotoCardData[] = [
   {
     id: "photo-1",
-    image: "/assets/photo1.png",
+    image: "/assets/photo2.png",
     name: "Stevano Peters",
     subtitle: "THE DESIGNER • DEALER'S CHOICE",
   },
   {
     id: "photo-2",
-    image: "/assets/photo2.png",
+    image: "/assets/photo1.png",
     name: "Stevano Peters",
     subtitle: "THE BUILDER • AI-FLUENT",
   },

@@ -170,13 +170,30 @@ export const MOTION = {
     helloFadeOut: 180, // "Hello!" + subheading fade on deck click
     logoTravel: 900, // standalone logo's translate+scale travel to the dock position
     dockCrossfade: 220, // logo <-> dock opacity swap, once the logo arrives
-    dockFormation: 1400, // pill extend + button reveal, after the crossfade
-    // Rest-state clip is an ellipse, not a circle — a circle inscribed in
-    // the center logo's box clips its corners; an ellipse can be sized to
-    // clear a rectangular logo cleanly while still reading as a small pill.
-    dockRestRx: 42, // px, rest-state ellipse half-width (clears the logo's corners)
-    dockRestRy: 28, // px, rest-state ellipse half-height
-    dockFormedRadius: 280, // px, fully-formed ellipse radius (both axes) — covers the whole pill
+    dockFormation: 1400, // shell extend + button reveal, after the crossfade
+    // Rest state is a small circle (ControlDock.module.css's .dockShell) —
+    // width alone grows on desktop (dock is horizontally center-anchored,
+    // so growing width never shifts center; height stays 100% the whole
+    // time, per spec — "same height" throughout); width AND height grow
+    // together on mobile (dock stacks vertically there, shell top-anchored
+    // so it grows downward from the logo, same direction the button rows
+    // below it reveal in). See lib/dockChoreography.ts's dockShellAnimate.
+    dockRestSize: 64, // px, rest-state circle diameter (both axes)
+    // Mobile only — keeps the small rest-state circle centered on the
+    // logo rather than on `.dockShell`'s own top:0 reference point (which
+    // is `.dock`'s padding-box edge, not the logo). Derived from
+    // ControlDock.module.css's mobile `.dock` padding-top (16px) + half of
+    // `.centerLogo`'s own height (42px) = 37px logo center, minus half of
+    // dockRestSize above — recompute if any of those three change.
+    dockRestTopOffsetMobile: 5, // px
+    dockMobileFormedRadius: 28, // px, mobile's final rounded-rect corner — desktop's final shape is a true pill (999px) throughout, no radius morph needed there
+    // Extra delay (on top of logoTravel + dockCrossfade) before the button
+    // groups start their own stagger-in — separate from the shell's own
+    // start, which stays at logoTravel + dockCrossfade exactly. Without
+    // this, buttons began fading in the instant the shell started
+    // expanding, well before the shell had actually grown out to reach
+    // them, reading as buttons floating free rather than being uncovered.
+    dockButtonRevealDelay: 500,
     dockButtonStagger: 90, // per-button reveal stagger within each group
     dockButtonOffsetX: 20, // px, buttons start shifted toward dock center
     borderFadeIn: 700, // dashed play-area border alpha fade-in

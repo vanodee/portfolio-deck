@@ -19,6 +19,36 @@
   column-gap: 16px;
   width: min(500px, calc(100vw - 64px));
   padding: 8px 16px;
+}
+
+/* Onboarding dock-formation (DS §3.3/§3.5, lib/dockChoreography.ts) — the
+   glass visual (fill/border/shadow/blur/radius) lives here, on its own
+   layer behind the buttons/logo, rather than directly on `.dock`. `.dock`
+   itself is real, stable, and full-size from first paint (its grid is what
+   the onboarding logo's shared-element FLIP travels to, and what the
+   buttons/logo actually lay out against) — this shell is what visually
+   grows from a small circle into the full pill, independent of that
+   layout. Top-anchored + horizontally centered rather than `inset: 0`: on
+   desktop height never changes (always 100%), so the anchor is moot; on
+   mobile it does (small circle -> full column height), and top-anchoring
+   is what makes it grow downward from the logo rather than from the
+   stack's center. `top` itself is also Framer Motion-driven on mobile (see
+   dockShellAnimate) — the static `0` below is both the desktop value
+   (constant) and the no-JS fallback; JS nudges it to
+   `dockRestTopOffsetMobile` for the small rest state specifically, since
+   `top: 0` alone (this element's own box, not accounting for `.dock`'s own
+   padding) sits above the logo's true center at that size. Negative
+   z-index, not DOM order, is what puts it behind the grid content — a
+   positioned element (`position: absolute`) always paints above
+   non-positioned in-flow siblings regardless of source order. */
+.dockShell {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: -1;
+  width: 100%;
+  height: 100%;
   background: var(--dock-fill);
   border: 1px solid var(--dock-border);
   border-radius: 999px;
@@ -426,8 +456,14 @@
     width: fit-content;
     max-width: calc(100vw - 24px);
     padding: 16px 32px;
-    border-radius: 28px;
     bottom: 12px;
+  }
+
+  /* No-JS fallback only — Framer Motion drives this in the formed state
+     (lib/dockChoreography.ts's dockShellAnimate already returns
+     MOTION.onboarding.dockMobileFormedRadius here once formed). */
+  .dockShell {
+    border-radius: 28px;
   }
 
   .centerLogo {

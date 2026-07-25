@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useIsNotFoundRoute } from "@/hooks/useIsNotFoundRoute";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useCategoryFilter } from "@/hooks/useCategoryFilter";
 import { useTableStore } from "@/store/useTableStore";
 import {
@@ -17,8 +18,8 @@ import {
   dockButtonVariants,
   dockExtendDelay,
   dockGroupVariants,
-  dockPillAnimate,
-  dockPillTransition,
+  dockShellAnimate,
+  dockShellTransition,
   leftSwapButtonVariants,
   leftSwapTransition,
 } from "@/lib/dockChoreography";
@@ -44,24 +45,27 @@ import CategoryFilterMenu from "./CategoryFilterMenu";
 // `navBusy` derivation below for why the whole dock, not just the toggle,
 // locks for the remainder of that transition).
 //
-// Dock-formation handoff (DS §3.5, lib/dockChoreography.ts) — the ONE
+// Dock-formation handoff (DS §3.3/§3.5, lib/dockChoreography.ts) — the ONE
 // remaining transition here, played once during onboarding, never replayed
 // on route change:
 //   1. Hidden entirely (opacity 0) while OnboardingScreen's standalone logo
 //      travels/scales down onto this dock's center logo (the layoutId
 //      shared-element FLIP target — its rect must stay stable/correct from
-//      first paint, which is why the dock's real box (grid/width/radius)
-//      never itself resizes; only clip-path fakes the visible shape).
-//   2. Once the logo arrives, this dock crossfades in (opacity 0->1) as the
-//      standalone logo crossfades out — still clipped to the small
-//      rest-state ellipse at this point, so the swap reads as seamless.
-//   3. After the crossfade, the clip-path extends (small ellipse -> large
-//      ellipse, both the same shape function so Framer Motion can actually
-//      interpolate between them — mixing circle()/inset() can't animate)
-//      and the button groups stagger in from center. The rest-state clip is
-//      deliberately an ellipse rather than a circle: a circle inscribed in
-//      the logo's box clips its corners, which read as the logo being cut
-//      off.
+//      first paint, which is why `.dock` itself, the grid the logo/buttons
+//      actually lay out against, never resizes at all. The glass visual —
+//      fill/border/shadow/blur/radius — lives on a separate `.dockShell`
+//      layer behind that grid instead, and IT'S what visibly grows from a
+//      small circle to the full pill; `.dock`'s own layout is completely
+//      unaffected either way).
+//   2. Once the logo arrives, the shell crossfades in (opacity 0->1) as the
+//      standalone logo crossfades out — still at its small rest size at
+//      this point, so the swap reads as seamless.
+//   3. After the crossfade, the shell expands (small circle -> full
+//      width, desktop; small circle -> full width+height plus a
+//      border-radius morph to the final rounded-rect corner, mobile — see
+//      dockShellAnimate) and the button groups stagger in from center,
+//      same timing as before, now against a real growing glass edge
+//      instead of a clip-path mask.
 export default function ControlDock() {
   const router = useRouter();
   const pathname = usePathname();
@@ -73,6 +77,9 @@ export default function ControlDock() {
   // is still computed with the rest of the hooks above the early return (Rules
   // of Hooks — every hook here must run unconditionally on every render).
   const notFound = useIsNotFoundRoute();
+  // Dock-formation shell (below) needs to know which axis grows on mobile
+  // — see dockShellAnimate's doc comment (lib/dockChoreography.ts).
+  const isMobile = useBreakpoint() === "mobile";
 
   const allRevealed = useTableStore((s) => s.allRevealed);
   const dealComplete = useTableStore((s) => s.dealComplete);
@@ -200,15 +207,19 @@ export default function ControlDock() {
 
   return (
     <>
-      <motion.nav
+      <nav
         ref={dockRef}
         className={styles.dock}
         aria-label="Table controls"
         style={{ pointerEvents: formed ? "auto" : "none" }}
-        initial={false}
-        animate={dockPillAnimate(formed)}
-        transition={dockPillTransition(formed)}
       >
+        <motion.div
+          className={styles.dockShell}
+          aria-hidden="true"
+          initial={false}
+          animate={dockShellAnimate(formed, isMobile)}
+          transition={dockShellTransition(formed)}
+        />
         <motion.div
           className={styles.group}
           variants={groupVariants}
@@ -332,7 +343,7 @@ export default function ControlDock() {
             <DockToggle checked={checked} disabled={disabledAll} onToggle={handleToggle} />
           </motion.div>
         </motion.div>
-      </motion.nav>
+      </nav>
       {onHome && (
         <CategoryFilterMenu anchorRef={categoryFilterButtonRef} dockRef={dockRef} />
       )}

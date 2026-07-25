@@ -15,28 +15,60 @@ const logoTravel = MOTION.onboarding.logoTravel / 1000;
 const crossfade = MOTION.onboarding.dockCrossfade / 1000;
 const formation = MOTION.onboarding.dockFormation / 1000;
 
-/** Pill opacity + clip-path target. */
-export function dockPillAnimate(formed: boolean) {
+/** Glass shell's opacity + size/shape target (ControlDock.module.css's
+ * .dockShell — a real element that grows, not a clip-path mask over an
+ * already-full-size pill). Small circle -> full pill on desktop (width
+ * only, height is 100% in both states, border-radius a constant 999px —
+ * always exceeds half of any reasonable box dimension, so it renders as
+ * "as round as the current box allows" throughout with zero morphing
+ * needed); small circle -> full rounded column on mobile (width AND
+ * height grow together, plus a real radius morph down to the final
+ * rounded-rect corner, since only desktop's final shape is a true pill).
+ * Mobile's rest-state radius is exactly `dockRestSize / 2` — the minimum
+ * a circle needs at that box size — rather than reusing desktop's
+ * oversized 999px constant: border-radius renders capped at
+ * min(declared, currentHeight/2), so starting from 999px meant the decline
+ * stayed invisible (capped) until the box had nearly finished growing,
+ * even sharing the same timing as width/height. Starting already at the
+ * exact circle-radius for that box size leaves next to no capping
+ * headroom, so the corner visibly softens in step with the scale-up
+ * instead of visibly lagging behind it. `top` only moves on mobile:
+ * `dockRestTopOffsetMobile` at rest (centers the small circle on the
+ * logo, which — unlike the shell's own top:0 reference point — sits
+ * inset by the dock's own padding), back to 0 once formed (shell fills
+ * the whole box edge to edge, matching every other state). `isMobile`
+ * from hooks/useBreakpoint.ts. */
+export function dockShellAnimate(formed: boolean, isMobile: boolean) {
+  const small = MOTION.onboarding.dockRestSize;
   return {
     opacity: formed ? 1 : 0,
-    clipPath: formed
-      ? `ellipse(${MOTION.onboarding.dockFormedRadius}px ${MOTION.onboarding.dockFormedRadius}px at center)`
-      : `ellipse(${MOTION.onboarding.dockRestRx}px ${MOTION.onboarding.dockRestRy}px at center)`,
+    width: formed ? "100%" : small,
+    height: !isMobile || formed ? "100%" : small,
+    top: isMobile && !formed ? MOTION.onboarding.dockRestTopOffsetMobile : 0,
+    borderRadius: !isMobile ? 999 : formed ? MOTION.onboarding.dockMobileFormedRadius : small / 2,
   };
 }
 
-export function dockPillTransition(formed: boolean) {
+export function dockShellTransition(formed: boolean) {
   const extendDelay = formed ? logoTravel + crossfade : 0;
+  const expand = { delay: extendDelay, duration: formation, ease: openEaseBezierPoints };
   return {
     opacity: { delay: formed ? logoTravel : 0, duration: crossfade },
-    clipPath: { delay: extendDelay, duration: formation, ease: openEaseBezierPoints },
+    width: expand,
+    height: expand,
+    top: expand,
+    borderRadius: expand,
   };
 }
 
-/** Same value/delay math ControlDock used inline for extendDelay — exposed
- * so callers can feed it into dockGroupVariants without recomputing it. */
+/** Extra delay (on top of logoTravel + dockCrossfade) before the button
+ * groups' own stagger-in starts — separate from (and later than) the
+ * shell's own start, MOTION.onboarding.dockButtonRevealDelay, so buttons
+ * don't fade in before the shell has actually grown out to reach them. */
 export function dockExtendDelay(formed: boolean) {
-  return formed ? logoTravel + crossfade : 0;
+  return formed
+    ? logoTravel + crossfade + MOTION.onboarding.dockButtonRevealDelay / 1000
+    : 0;
 }
 
 /** Button-group stagger, delayed until the logo travel + crossfade finish. */

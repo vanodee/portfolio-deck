@@ -194,6 +194,12 @@ export const MOTION = {
     // expanding, well before the shell had actually grown out to reach
     // them, reading as buttons floating free rather than being uncovered.
     dockButtonRevealDelay: 500,
+    // About-direct-load skip-logo-phase (lib/dockChoreography.ts's
+    // skipLogoPhase param) — a brief rest beat before the shell auto-expands
+    // with no logo to wait behind. Sized to match dockCrossfade's magnitude:
+    // same structural role (pause between "visible at rest" and "starts
+    // growing"), just mount-triggered instead of click-triggered.
+    dockAboutAutoFormDelay: 220,
     dockButtonStagger: 90, // per-button reveal stagger within each group
     dockButtonOffsetX: 20, // px, buttons start shifted toward dock center
     borderFadeIn: 700, // dashed play-area border alpha fade-in

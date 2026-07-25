@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIsNotFoundRoute } from "@/hooks/useIsNotFoundRoute";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useCategoryFilter } from "@/hooks/useCategoryFilter";
@@ -45,9 +45,11 @@ import CategoryFilterMenu from "./CategoryFilterMenu";
 // `navBusy` derivation below for why the whole dock, not just the toggle,
 // locks for the remainder of that transition).
 //
-// Dock-formation handoff (DS §3.3/§3.5, lib/dockChoreography.ts) — the ONE
-// remaining transition here, played once during onboarding, never replayed
-// on route change:
+// Dock-formation handoff (DS §3.3/§3.5/§3.6, lib/dockChoreography.ts) — the
+// ONE remaining transition here, played once per entry path, never replayed
+// on route change. Two entry paths:
+//
+// Home (deck click starts onboarding -> dealing):
 //   1. Hidden entirely (opacity 0) while OnboardingScreen's standalone logo
 //      travels/scales down onto this dock's center logo (the layoutId
 //      shared-element FLIP target — its rect must stay stable/correct from
@@ -66,6 +68,14 @@ import CategoryFilterMenu from "./CategoryFilterMenu";
 //      dockShellAnimate) and the button groups stagger in from center,
 //      same timing as before, now against a real growing glass edge
 //      instead of a clip-path mask.
+//
+// Direct /about load (`directAboutLoad` below, no deck to click and no
+// StandaloneLogo to travel from): the shell renders visible at rest size
+// immediately (skipLogoPhase forces opacity 1 instead of the hidden-then-
+// crossfade start), holds for a brief dockAboutAutoFormDelay beat (a real
+// setTimeout, not a Framer transition delay), then goes straight into the
+// same shell-expand + button-stagger as step 3 above — no crossfade, no
+// logo travel.
 export default function ControlDock() {
   const router = useRouter();
   const pathname = usePathname();
@@ -94,9 +104,54 @@ export default function ControlDock() {
   const categoryFilterButtonRef = useRef<HTMLButtonElement>(null);
   const dockRef = useRef<HTMLElement>(null);
 
-  // Formed once past Home's onboarding gate; every other route has no
-  // onboarding concept of its own, so it's always formed there.
-  const formed = !onHome || appPhase !== "onboarding";
+  // Fresh direct load of /about (hard reload, typed URL, bookmark) — the one
+  // scenario with no deck-click trigger to gate a formation animation on.
+  // Captured once, lazily, from this component's true first render (the
+  // dock persists across every later Home<->About nav — see top-of-file
+  // comment — so this can only ever be correct at mount).
+  const [directAboutLoad] = useState(() => !onHome && appPhase === "onboarding");
+  const [aboutFormed, setAboutFormed] = useState(false);
+  useEffect(() => {
+    if (!directAboutLoad) return;
+    const t = window.setTimeout(
+      () => setAboutFormed(true),
+      MOTION.onboarding.dockAboutAutoFormDelay,
+    );
+    return () => window.clearTimeout(t);
+  }, [directAboutLoad]);
+
+  // Next.js SSRs this ("use client") component too, and Framer Motion bakes
+  // the `animate` prop's computed value into that server-rendered HTML —
+  // meaning the very first thing ever painted (server output AND the
+  // client's first hydration pass, which necessarily agree) uses
+  // useBreakpoint()'s safe "desktop" default (no `window` exists on the
+  // server to know otherwise). For every other path that's invisible and
+  // harmless, but directAboutLoad forces the shell visible immediately, so
+  // on an actual mobile device that first paint showed briefly as a tall,
+  // fully-rounded desktop-shaped capsule (height 100%, radius 999) before
+  // snapping down to the true small circle once isMobile resolved. Fix:
+  // gate the reveal itself behind a plain post-mount flag — starts false
+  // identically on server and client (no window read, so no hydration-
+  // mismatch risk, unlike an earlier attempt at this), and flips in the
+  // same effect-flush batch as useBreakpoint()'s own correction (both are
+  // plain mount effects on this same component), so by the render where
+  // the shell actually becomes visible, isMobile is already guaranteed
+  // correct.
+  const [breakpointReady, setBreakpointReady] = useState(false);
+  useEffect(() => setBreakpointReady(true), []);
+  const skipLogoPhase = directAboutLoad && breakpointReady;
+
+  // Formed once past Home's onboarding gate; a direct /about load auto-forms
+  // itself after a brief beat (dockAboutAutoFormDelay) instead, since
+  // there's no deck click to gate on and no StandaloneLogo to travel from.
+  // Branches on `onHome` FIRST (not `directAboutLoad`) so navigating away
+  // from /about before the timer fires can't leave Home stuck deferring to
+  // a stale `aboutFormed` value.
+  const formed = onHome
+    ? appPhase !== "onboarding"
+    : directAboutLoad
+      ? aboutFormed
+      : true;
 
   // DockToggle's visual position — deliberately NOT derived directly from
   // `onHome`/pathname. The actual route change (beginTableNavExit) takes
@@ -197,7 +252,7 @@ export default function ControlDock() {
     setSettled(true);
   }
 
-  const extendDelay = dockExtendDelay(formed);
+  const extendDelay = dockExtendDelay(formed, skipLogoPhase);
   const groupVariants = dockGroupVariants(extendDelay);
 
   // Every hook above must still run on every render (Rules of Hooks) even
@@ -217,8 +272,8 @@ export default function ControlDock() {
           className={styles.dockShell}
           aria-hidden="true"
           initial={false}
-          animate={dockShellAnimate(formed, isMobile)}
-          transition={dockShellTransition(formed)}
+          animate={dockShellAnimate(formed, isMobile, skipLogoPhase)}
+          transition={dockShellTransition(formed, skipLogoPhase)}
         />
         <motion.div
           className={styles.group}

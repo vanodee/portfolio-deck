@@ -1,15 +1,23 @@
 import { MOTION } from "./motion";
 import { openEaseBezierPoints } from "./easing";
 
-// Dock-formation choreography (DS §3.5) — the one-time onboarding handoff
-// where ControlDock forms from OnboardingScreen's standalone logo. The dock
-// itself now persists across the Home <-> About route change (app/layout.tsx)
-// rather than remounting per route, so this only ever plays forward, once.
-// All durations/easing come from MOTION.onboarding verbatim (still flagged
-// placeholder-pending-tuning in lib/motion.ts).
+// Dock-formation choreography (DS §3.5/§3.6) — the one-time onboarding
+// handoff where ControlDock forms from OnboardingScreen's standalone logo.
+// The dock itself now persists across the Home <-> About route change
+// (app/layout.tsx) rather than remounting per route, so this only ever plays
+// forward, once, per entry path. All durations/easing come from
+// MOTION.onboarding verbatim (still flagged placeholder-pending-tuning in
+// lib/motion.ts).
 //
-// logoTravel (FLIP, opaque) -> dockCrossfade (opacity swap) ->
-// dockFormation (clip expand + button stagger-in).
+// Two entry paths, both driven by the same three functions below via their
+// `skipLogoPhase` param (ControlDock.tsx):
+//   - Home (skipLogoPhase=false): logoTravel (FLIP, opaque) -> dockCrossfade
+//     (opacity swap) -> dockFormation (shell expand + button stagger-in).
+//   - Direct /about load (skipLogoPhase=true): no logo to travel, so the
+//     shell just renders visible at rest size, holds for a brief
+//     dockAboutAutoFormDelay beat (a real setTimeout in ControlDock.tsx,
+//     not a Framer transition delay), then goes straight into the same
+//     dockFormation expand + button stagger-in.
 
 const logoTravel = MOTION.onboarding.logoTravel / 1000;
 const crossfade = MOTION.onboarding.dockCrossfade / 1000;
@@ -38,10 +46,10 @@ const formation = MOTION.onboarding.dockFormation / 1000;
  * inset by the dock's own padding), back to 0 once formed (shell fills
  * the whole box edge to edge, matching every other state). `isMobile`
  * from hooks/useBreakpoint.ts. */
-export function dockShellAnimate(formed: boolean, isMobile: boolean) {
+export function dockShellAnimate(formed: boolean, isMobile: boolean, skipLogoPhase = false) {
   const small = MOTION.onboarding.dockRestSize;
   return {
-    opacity: formed ? 1 : 0,
+    opacity: formed || skipLogoPhase ? 1 : 0,
     width: formed ? "100%" : small,
     height: !isMobile || formed ? "100%" : small,
     top: isMobile && !formed ? MOTION.onboarding.dockRestTopOffsetMobile : 0,
@@ -49,11 +57,27 @@ export function dockShellAnimate(formed: boolean, isMobile: boolean) {
   };
 }
 
-export function dockShellTransition(formed: boolean) {
-  const extendDelay = formed ? logoTravel + crossfade : 0;
-  const expand = { delay: extendDelay, duration: formation, ease: openEaseBezierPoints };
+export function dockShellTransition(formed: boolean, skipLogoPhase = false) {
+  const extendDelay = formed ? (skipLogoPhase ? 0 : logoTravel + crossfade) : 0;
+  // duration is 0 (an instant snap, not a tween) whenever `formed` is still
+  // false — the rest state is meant to be perfectly static, so any target
+  // change that happens before the real formed flip (e.g. useBreakpoint()
+  // correcting its SSR-safe "desktop" guess to "mobile" a tick after mount,
+  // which briefly points height/radius at the wrong value) should resolve
+  // instantly rather than visibly tween. Home never surfaces this either
+  // way (the shell is opacity-0 for the entire unformed phase), but
+  // About's skipLogoPhase reveal makes the shell visible immediately, so a
+  // tweened correction there used to read as a multi-hundred-ms dip before
+  // the real expand even started.
+  const expand = {
+    delay: extendDelay,
+    duration: formed ? formation : 0,
+    ease: openEaseBezierPoints,
+  };
   return {
-    opacity: { delay: formed ? logoTravel : 0, duration: crossfade },
+    opacity: skipLogoPhase
+      ? { duration: 0 }
+      : { delay: formed ? logoTravel : 0, duration: crossfade },
     width: expand,
     height: expand,
     top: expand,
@@ -64,11 +88,16 @@ export function dockShellTransition(formed: boolean) {
 /** Extra delay (on top of logoTravel + dockCrossfade) before the button
  * groups' own stagger-in starts — separate from (and later than) the
  * shell's own start, MOTION.onboarding.dockButtonRevealDelay, so buttons
- * don't fade in before the shell has actually grown out to reach them. */
-export function dockExtendDelay(formed: boolean) {
-  return formed
-    ? logoTravel + crossfade + MOTION.onboarding.dockButtonRevealDelay / 1000
-    : 0;
+ * don't fade in before the shell has actually grown out to reach them.
+ * skipLogoPhase (About-direct-load) drops the logoTravel + crossfade term —
+ * that pause is already provided by a real setTimeout in ControlDock.tsx
+ * before `formed` ever flips true there, so adding it again here would
+ * double-count it. */
+export function dockExtendDelay(formed: boolean, skipLogoPhase = false) {
+  if (!formed) return 0;
+  return skipLogoPhase
+    ? MOTION.onboarding.dockButtonRevealDelay / 1000
+    : logoTravel + crossfade + MOTION.onboarding.dockButtonRevealDelay / 1000;
 }
 
 /** Button-group stagger, delayed until the logo travel + crossfade finish. */

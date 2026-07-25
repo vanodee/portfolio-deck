@@ -62,6 +62,21 @@ export const MOTION = {
     stagger: 50, // 40–60ms window, reuses flip timing
   },
 
+  // Home card-grid touch-scroll momentum (PlayArea.tsx/TableCanvas.tsx).
+  // The grid is WebGL-rendered, not real DOM content, so the canvas has to
+  // capture touch itself (touchAction: "none") and forward deltas manually
+  // — which meant releasing a touch-drag stopped dead, unlike About's plain
+  // `overflow-y` scroll region, which gets native momentum for free. Touch
+  // only (wheel already glides via PlayArea.tsx's SCROLL_EASE toward a
+  // static target — a fling is a *moving* target, decaying over time).
+  // Placeholder values pending live-feel tuning, same caveat as
+  // onboarding/tableNav elsewhere in this file.
+  homeScrollMomentum: {
+    minFlingVelocity: 0.15, // px/ms — below this at release, no fling (avoids drift on a deliberate stop-and-lift)
+    stopVelocity: 0.02, // px/ms — fling ends once decayed below this
+    decayPerMs: 0.9965, // multiplicative velocity decay applied per ms elapsed (~200ms half-life)
+  },
+
   // About page — Photo Card spread (Hero section). NOT part of DS §3's
   // documented card-front spec yet; new, About-page-specific geometry, and
   // NOT a reuse/edit of `gather` above (that block is WebGL open-card 3D

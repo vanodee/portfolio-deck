@@ -1,10 +1,11 @@
 "use client";
 
 import type { RefObject } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useTableStore } from "@/store/useTableStore";
 import type { FrameRect, TableLayout } from "@/lib/layout";
+import { MOTION } from "@/lib/motion";
 import CardsLayer from "./CardsLayer";
 
 // Stays full-viewport forever — the WebGL camera's origin is the true
@@ -55,6 +56,62 @@ export default function TableCanvas({
   // gestures a mobile scrollport would normally receive directly — forward
   // both wheel (desktop/trackpad) and touch-drag (mobile) deltas manually.
   const touchY = useRef<number | null>(null);
+  // Fling momentum (touch only — wheel already glides via PlayArea.tsx's
+  // SCROLL_EASE). touchAction: "none" below opts this element out of any
+  // native touch-scroll physics, so without this, releasing a drag stopped
+  // dead instead of coasting like About's native `overflow-y` region does.
+  // velocityRef carries the same sign/units as onScrollForward's deltaY
+  // (px per touchmove), just expressed per-ms so it decays smoothly
+  // regardless of frame rate.
+  const touchVelocityRef = useRef(0); // px/ms, EMA-smoothed across touchmove samples
+  const lastTouchTimeRef = useRef(0);
+  const momentumRafRef = useRef<number | null>(null);
+
+  const stopMomentum = () => {
+    if (momentumRafRef.current != null) {
+      cancelAnimationFrame(momentumRafRef.current);
+      momentumRafRef.current = null;
+    }
+  };
+
+  // Treats momentum as synthetic continued touchmove input: each frame
+  // forwards a decaying delta through the exact same onScrollForward(...,
+  // true) path a real finger would, so it can't drift out of sync with
+  // PlayArea.tsx's own clamping/rail-sync logic. Stops on hitting a scroll
+  // bound (scrollYRef doesn't move despite a nonzero request), on velocity
+  // decaying below the stop threshold, or if a card opens/dealing isn't
+  // complete (fresh store read — same race PlayArea.tsx's handleScrollForward
+  // guards against).
+  const startMomentum = () => {
+    const { minFlingVelocity, stopVelocity, decayPerMs } = MOTION.homeScrollMomentum;
+    let velocity = touchVelocityRef.current;
+    if (Math.abs(velocity) < minFlingVelocity) return;
+    let lastTime = performance.now();
+    const step = () => {
+      const s = useTableStore.getState();
+      if (s.openCardId !== null || !s.dealComplete) {
+        momentumRafRef.current = null;
+        return;
+      }
+      const now = performance.now();
+      const dt = now - lastTime;
+      lastTime = now;
+      const requested = velocity * dt;
+      const before = scrollYRef.current;
+      onScrollForward(requested, true);
+      const moved = Math.abs(scrollYRef.current - before);
+      velocity *= Math.pow(decayPerMs, dt);
+      const hitBound = moved < 0.01 && Math.abs(requested) > 0.5;
+      if (hitBound || Math.abs(velocity) < stopVelocity) {
+        momentumRafRef.current = null;
+        return;
+      }
+      momentumRafRef.current = requestAnimationFrame(step);
+    };
+    momentumRafRef.current = requestAnimationFrame(step);
+  };
+
+  useEffect(() => stopMomentum, []);
 
   return (
     <div
@@ -71,17 +128,30 @@ export default function TableCanvas({
         onScrollForward(e.deltaY, false);
       }}
       onTouchStart={(e) => {
+        stopMomentum(); // a new touch interrupts any fling still coasting
         touchY.current = e.touches[0]?.clientY ?? null;
+        touchVelocityRef.current = 0;
+        lastTouchTimeRef.current = e.timeStamp;
       }}
       onTouchMove={(e) => {
         if (!scrollEnabled || touchY.current == null) return;
         const y = e.touches[0]?.clientY;
         if (y == null) return;
-        onScrollForward(touchY.current - y, true);
+        const deltaY = touchY.current - y;
+        const dt = e.timeStamp - lastTouchTimeRef.current;
+        if (dt > 0) {
+          // EMA, not the raw last-sample velocity — a finger often
+          // decelerates for a frame right before lifting, which would read
+          // as "no fling intended" even mid-flick if taken literally.
+          touchVelocityRef.current = touchVelocityRef.current * 0.5 + (deltaY / dt) * 0.5;
+        }
+        lastTouchTimeRef.current = e.timeStamp;
+        onScrollForward(deltaY, true);
         touchY.current = y;
       }}
       onTouchEnd={() => {
         touchY.current = null;
+        startMomentum();
       }}
     >
       <Canvas

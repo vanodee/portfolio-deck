@@ -33,8 +33,9 @@ export default function DeckClickCatcher({
   const { size } = useThree();
   const panRef = useRef<THREE.Group>(null);
   const { cardW, cardH, deck } = layout;
-  const hitW =
-    cardW + 2 * (MOTION.onboardingShuffle.cutOffsetX + MOTION.onboardingShuffle.fanAmpX + 20);
+  const shuffleCutOffsetX = cardW * MOTION.onboardingShuffle.cutOffsetXRatio;
+  const shuffleFanAmpX = cardW * MOTION.onboardingShuffle.fanAmpXRatio;
+  const hitW = cardW + 2 * (shuffleCutOffsetX + shuffleFanAmpX + 20);
   const hitH = cardH + 40; // Y is static during onboarding — just click padding
   const restY = frameRect ? onboardingRestY(layout, frameRect, size.height) : deck.y;
 

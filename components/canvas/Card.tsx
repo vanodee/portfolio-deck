@@ -25,7 +25,7 @@ import {
   openEase,
 } from "@/lib/easing";
 import { cardHandles } from "@/lib/cardHandles";
-import { gatherAround, scatterFromCenter } from "@/lib/choreography";
+import { gatherAround, regatherAround, scatterFromCenter } from "@/lib/choreography";
 import { useTableStore } from "@/store/useTableStore";
 import { useCardTextures } from "@/hooks/useCardTextures";
 import {
@@ -58,6 +58,20 @@ function lerpRow(a: ElevationRow, b: ElevationRow, t: number): ElevationRow {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Shared fan-stack offset math for the open-reveal gather stage — used by
+// both the animated entrance (gather) and the instant re-anchor (regather,
+// lib/choreography.ts's regatherAround) so the two can never drift apart
+// from each other's geometry.
+function gatherFanOffset(gatherRank: number) {
+  const side = gatherRank % 2 === 0 ? 1 : -1;
+  const step = Math.min(gatherRank + 1, MOTION.gather.fanMaxRank);
+  return {
+    fanX: side * step * MOTION.gather.fanStepPx,
+    rotZ: side * step * MOTION.gather.fanAngleStepRad,
+    z: MOTION.gather.stackZBase - gatherRank * MOTION.gather.stackZStep,
+  };
+}
 
 // animated('meshBasicMaterial') trips TS's instantiation-depth limit when
 // inferring spring-driven material props — alias with a shallow prop type.
@@ -131,14 +145,31 @@ export default function Card({
     return { period, phase0 };
   }, [stackIndex]);
 
-  // Stable per-card X fan for the onboarding shuffle loop — computed once
-  // (same deterministic-seed recipe as bobSeed above), not re-randomized
-  // per tick, so the "not perfectly aligned horizontally" look stays clean
-  // rather than noisy.
+  // Stable per-card X fan seed for the onboarding shuffle loop — deterministic
+  // off stackIndex, not re-randomized per tick, so the "not perfectly aligned
+  // horizontally" look stays clean rather than noisy. Used both for the
+  // mount-time initial spring value below (shuffleFanX) and, live, inside
+  // onboardingShuffleStart's loop (via liveGeomRef) so a resize mid-loop
+  // recomputes the same fan from the CURRENT cardW rather than the one at
+  // mount.
+  const shuffleSeed = ((stackIndex * 733) % 1000) / 1000;
   const shuffleFanX = useMemo(() => {
-    const seed = ((stackIndex * 733) % 1000) / 1000;
-    return (seed - 0.5) * 2 * MOTION.onboardingShuffle.fanAmpX;
-  }, [stackIndex]);
+    return (shuffleSeed - 0.5) * 2 * cardW * MOTION.onboardingShuffle.fanAmpXRatio;
+  }, [shuffleSeed, cardW]);
+
+  // Mirrors the latest layout/frameRect/viewport height on every commit, for
+  // onboardingShuffleStart's long-lived loop below to read fresh values from
+  // without needing to restart (its `to: async` chain is a single ongoing
+  // posApi.start() call — issuing a second, competing .start() to correct
+  // x/y live would cancel/supersede it, same "superseded" pattern the
+  // ascendToDeck handoff already relies on elsewhere in this file). An
+  // effect, not a render-body assignment (refs can't be written during
+  // render) — still always current well before the loop's next 130-190ms
+  // sleep resolves and reads it.
+  const liveGeomRef = useRef({ layout, frameRect, viewportH: size.height });
+  useEffect(() => {
+    liveGeomRef.current = { layout, frameRect, viewportH: size.height };
+  }, [layout, frameRect, size.height]);
 
   const [flip, flipApi] = useSpring(() => ({
     rot: initialCard.faceUp ? 0 : Math.PI,
@@ -211,9 +242,28 @@ export default function Card({
   // reflowing even though nothing actually resized meaningfully — a fresh
   // `layout` object identity here would otherwise snap the card straight
   // back to its grid slot mid-exit/enter, undoing exitOffTable's translate.
+  //
+  // Also skipped whenever any card is open (`anyCardOpen`) — a gathered
+  // card sitting stacked behind the open card is phase "idle" too (gather()
+  // resets it back to "idle" the instant it reaches its stacked position,
+  // Card.tsx's own gather handle above), indistinguishable from a card
+  // resting in the grid by phase alone. Without this guard, a resize while
+  // a project is open would silently teleport every hidden gathered card
+  // straight to its plain grid slot (invisible in the moment, since
+  // `othersHidden` hides them) — erasing the stacked formation
+  // `scatterFromCenter()` depends on to visibly burst them back outward on
+  // close, so the close animation would start and end at the same point
+  // and read as skipped/broken. It would do the same to the OPEN card's own
+  // instance too (its `phase` is never marked otherwise either), snapping
+  // its x/y/z to the grid slot while leaving its scaled-up `travelScale`
+  // untouched — an oversized card teleported into a tiny grid cell. The
+  // dedicated "open"-phase effect above already handles re-fitting the open
+  // card reactively; every other card is explicitly repositioned by
+  // gather()/scatter() at the right choreography beats — this effect has no
+  // job to do for any card while a project is open.
   useEffect(() => {
     const s = useTableStore.getState();
-    if (!s.dealComplete || s.cards[project.id].phase === "offTable") return;
+    if (!s.dealComplete || s.cards[project.id].phase === "offTable" || anyCardOpen) return;
     const idx = s.cards[project.id].gridIndex;
     posApi.start({
       x: layout.positions[idx].x,
@@ -221,7 +271,7 @@ export default function Card({
       z: restZ,
       immediate: true,
     });
-  }, [layout, posApi, project.id, restZ]);
+  }, [layout, posApi, project.id, restZ, anyCardOpen]);
 
   // Imperative handle for table-level choreography.
   useEffect(() => {
@@ -329,14 +379,36 @@ export default function Card({
       // same posApi spring deal() drives — cards already spawn at this
       // merged position (see the pos useSpring initializer above), so this
       // loop never needs an entrance tween into place, it just holds then
-      // cuts apart and back. X-axis only: y/z/rotZ are never referenced
-      // after mount, so they cannot drift. Never touches lib/choreography.ts
-      // or deal() — ascendToDeck() below is the explicit bridge between this
-      // loop and deal()'s own jitter.
+      // cuts apart and back. Never touches lib/choreography.ts or deal() —
+      // ascendToDeck() below is the explicit bridge between this loop and
+      // deal()'s own jitter.
+      //
+      // Reads deck.x/cardW/frameRect/viewportH fresh from liveGeomRef at
+      // every cut/merge step (not the values captured when this closure was
+      // created) — a resize/orientation change mid-loop previously left the
+      // shuffle animating relative to stale, pre-resize geometry (cards
+      // "not maintaining their position"), since this loop is a single
+      // long-lived posApi.start() call that never restarts on its own once
+      // running. Y is included in these same next() calls too (onboarding's
+      // rest Y is otherwise only ever set once, at mount) — reusing the
+      // existing cut/merge transition as a free, already-smooth resync
+      // rather than a separate immediate correction, which would need its
+      // own competing posApi.start() and cancel this very chain (same
+      // "superseded" hazard the catch block below already documents for
+      // ascendToDeck's takeover).
       onboardingShuffleStart: () => {
         onboardingCancelRef.current = false;
-        const { deck } = layout;
         const pileSide = stackIndex < cardCount / 2 ? -1 : 1;
+        const freshTarget = (side: number) => {
+          const { layout: liveLayout, frameRect: liveFrameRect, viewportH } = liveGeomRef.current;
+          const { deck, cardW: liveCardW } = liveLayout;
+          const fanX = (shuffleSeed - 0.5) * 2 * liveCardW * MOTION.onboardingShuffle.fanAmpXRatio;
+          const y = liveFrameRect ? onboardingRestY(liveLayout, liveFrameRect, viewportH) : deck.y;
+          return {
+            x: deck.x + side * liveCardW * MOTION.onboardingShuffle.cutOffsetXRatio + fanX,
+            y,
+          };
+        };
         posApi.start({
           to: async (next) => {
             try {
@@ -345,13 +417,13 @@ export default function Card({
                 await sleep(MOTION.onboardingShuffle.holdMerged);
                 if (onboardingCancelRef.current) break;
                 await next({
-                  x: deck.x + pileSide * MOTION.onboardingShuffle.cutOffsetX + shuffleFanX,
+                  ...freshTarget(pileSide),
                   config: { duration: MOTION.onboardingShuffle.cutDuration, easing: easeInOut },
                 });
                 await sleep(MOTION.onboardingShuffle.holdCut);
                 if (onboardingCancelRef.current) break;
                 await next({
-                  x: deck.x + shuffleFanX,
+                  ...freshTarget(0),
                   config: { duration: MOTION.onboardingShuffle.cutDuration, easing: easeInOut },
                 });
               }
@@ -400,11 +472,7 @@ export default function Card({
       gather: (openGridIndex, gatherRank, delayMs) => {
         setCardPhase(project.id, "gathering");
         const target = layout.positions[openGridIndex];
-        const side = gatherRank % 2 === 0 ? 1 : -1;
-        const step = Math.min(gatherRank + 1, MOTION.gather.fanMaxRank);
-        const fanX = side * step * MOTION.gather.fanStepPx;
-        const fanRotZ = side * step * MOTION.gather.fanAngleStepRad;
-        const z = MOTION.gather.stackZBase - gatherRank * MOTION.gather.stackZStep;
+        const { fanX, rotZ: fanRotZ, z } = gatherFanOffset(gatherRank);
 
         posApi.start({
           to: async (next) => {
@@ -419,6 +487,25 @@ export default function Card({
             });
             setCardPhase(project.id, "idle");
           },
+        });
+      },
+
+      // Instant re-anchor for an already-gathered card — same fan-stack math
+      // as gather() above, but no animation/stagger and no card-phase touch
+      // (the card is already "idle", per gather()'s own handoff, the whole
+      // time it sits stacked/hidden — see the regatherAround() doc comment,
+      // lib/choreography.ts, for why this exists as a separate handle rather
+      // than just re-calling gather()).
+      regather: (openGridIndex, gatherRank) => {
+        const target = layout.positions[openGridIndex];
+        const { fanX, rotZ: fanRotZ, z } = gatherFanOffset(gatherRank);
+        posApi.start({
+          x: target.x + fanX,
+          y: target.y,
+          z,
+          rotZ: fanRotZ,
+          travelScale: 1,
+          immediate: true,
         });
       },
 
@@ -497,6 +584,7 @@ export default function Card({
     restZ,
     frameRect,
     shuffleFanX,
+    shuffleSeed,
     size.height,
     entranceApi,
   ]);
@@ -570,9 +658,16 @@ export default function Card({
     } else if (openPhase === "scattering") {
       requestAnimationFrame(() => scatterFromCenter(project.id, layout));
     } else if (openPhase === "scaling") {
-      const pane = getReadingPane(size.width, size.height);
+      // window.innerWidth/innerHeight, not r3f's `size` — must match
+      // OpenCardOverlay.tsx's own getReadingPane(window.innerWidth,
+      // window.innerHeight) call exactly (see the "open"-phase effect below
+      // for why: two different measurement sources for "the same" viewport
+      // dimension can transiently disagree mid-resize).
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const pane = getReadingPane(vw, vh);
       const scale = pane.width / cardW;
-      const targetYAbsolute = size.height / 2 - (pane.top + (cardH * scale) / 2);
+      const targetYAbsolute = vh / 2 - (pane.top + (cardH * scale) / 2);
       // pos.x/y always target content-local coordinates (pan is applied
       // unconditionally every frame, see the useFrame above) — so the
       // desired true-viewport target is reached by subtracting the pan
@@ -580,7 +675,7 @@ export default function Card({
       // lifecycle (PlayArea.tsx), so this offset stays constant through
       // scaling/open/closing — no discontinuity at either phase boundary.
       const pan = frameRect
-        ? contentPanOffset(layout, frameRect, scrollYRef.current, size.width, size.height)
+        ? contentPanOffset(layout, frameRect, scrollYRef.current, vw, vh)
         : { x: 0, y: 0 };
       posApi.start({
         x: 0 - pan.x,
@@ -603,6 +698,94 @@ export default function Card({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenCard, openPhase]);
+
+  // Live-corrects the open card's position/scale if the viewport, frame
+  // rect, or grid layout changes while it's open (resize, orientation
+  // change, or a mobile/desktop breakpoint crossover) — the entrance tween
+  // above ("scaling") computes its target exactly once, so without this the
+  // reading pane's fit and the mesh's own always-live cardW/cardH (used for
+  // plane geometry below) silently drift apart on any resize while open.
+  // Instant (immediate: true), not eased — this tracks a live value the
+  // same way the per-frame pan (useFrame below) already does, not a
+  // discrete state transition; an eased tween here would visibly chase a
+  // moving target during a live window-drag resize. Scoped to "open" only
+  // (not "scaling") so it never fights the entrance tween itself — a resize
+  // mid-entrance briefly mismatches for at most one scaleOpen duration,
+  // self-correcting the instant openPhase reaches "open".
+  //
+  // Uses window.innerWidth/innerHeight, not r3f's `size` (from useThree) —
+  // OpenCardOverlay.tsx's own pane geometry is computed from
+  // window.innerWidth/innerHeight too, on its own separate `resize`
+  // listener. `size` is normally equal to those (the canvas is a full-
+  // viewport element), but the two are measured via different underlying
+  // mechanisms (a window `resize` event fires synchronously; r3f updates
+  // `size` from a ResizeObserver on the canvas, which the spec batches to
+  // report asynchronously) — during a live, continuous window-drag resize
+  // this let the mesh and the DOM pane transiently disagree on the current
+  // viewport size for a frame or two, producing a mesh taller (or shorter)
+  // than the actual pane in some very specific instances. Reading the same
+  // window properties both places removes the race outright rather than
+  // narrowing it.
+  useEffect(() => {
+    if (!isOpenCard || openPhase !== "open") return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const pane = getReadingPane(vw, vh);
+    const scale = pane.width / cardW;
+    const targetYAbsolute = vh / 2 - (pane.top + (cardH * scale) / 2);
+    const pan = frameRect
+      ? contentPanOffset(layout, frameRect, scrollYRef.current, vw, vh)
+      : { x: 0, y: 0 };
+    posApi.start({
+      x: 0 - pan.x,
+      y: targetYAbsolute - pan.y,
+      z: 60,
+      travelScale: scale,
+      immediate: true,
+    });
+  }, [
+    isOpenCard,
+    openPhase,
+    layout,
+    frameRect,
+    size.width,
+    size.height,
+    cardW,
+    cardH,
+    posApi,
+    scrollYRef,
+  ]);
+
+  // Keeps every OTHER card's gathered/stacked position anchored to THIS
+  // card's current grid slot while it stays open — gatherAround()
+  // (triggered once, above, on entering "gathering") computes each other
+  // card's fan-stack target from `layout.positions[openIdx]` at that single
+  // moment and never revisits it; the generic per-card "resync to grid slot
+  // on layout change" effect deliberately skips every card while any
+  // project is open (`anyCardOpen`, elsewhere in this file) so that stack
+  // formation isn't erased — but nothing was re-anchoring it to a NEW
+  // `openIdx` position either, so a resize/breakpoint crossover left the
+  // whole stack frozen at the stale, pre-resize anchor point. Invisible
+  // while it happens (every other card is hidden through scaling/open/
+  // closing), but becomes visible the instant scatterFromCenter() runs on
+  // close — cards would burst outward from that stale point ("a part of
+  // the table" not matching the open card's real position) instead of from
+  // where the open card actually is now. Scoped to scaling/open/closing,
+  // matching othersHidden below (not "gathering" itself, while the animated
+  // entrance in gatherAround is still actively in flight) and instant
+  // (regatherAround has no stagger/animation, unlike gatherAround) since
+  // nothing is visible yet.
+  useEffect(() => {
+    if (!isOpenCard) return;
+    if (openPhase !== "scaling" && openPhase !== "open" && openPhase !== "closing") return;
+    // Deferred a frame — same reason as gatherAround's own call above: every
+    // other card's handle-registration effect (which re-closes over this
+    // same fresh `layout`) is still flushing for this commit, so calling
+    // regatherAround synchronously here risks reading a still-stale
+    // `regather` closure (and its own stale `layout.positions[...]`) for
+    // cards whose registration effect hasn't re-run yet.
+    requestAnimationFrame(() => regatherAround(project.id, layout));
+  }, [isOpenCard, openPhase, layout, project.id]);
 
   const isInteractive = () => {
     const s = useTableStore.getState();

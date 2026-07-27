@@ -11,6 +11,11 @@ export interface CardHandle {
   shuffleTo: (gridIndex: number, delayMs: number) => void;
   /** Open-reveal gather stage: converge/stack fanned under the open card. */
   gather: (openGridIndex: number, gatherRank: number, delayMs: number) => void;
+  /** Instantly re-anchors an already-gathered card to the open card's
+   * current grid slot (same fan-stack math as gather, no animation/stagger,
+   * doesn't touch card phase) — keeps the stack from going stale if layout
+   * changes while a project stays open. */
+  regather: (openGridIndex: number, gatherRank: number) => void;
   /** Close-reveal scatter stage: burst back out to this card's own grid slot. */
   scatter: (delayMs: number) => void;
   /** Onboarding-only: start the looping overhand-shuffle merge/cut cycle. */

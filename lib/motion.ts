@@ -156,8 +156,16 @@ export const MOTION = {
   // scoped entirely to the pre-click onboarding screen. Not part of the
   // design system yet — placeholder values pending user tuning.
   onboardingShuffle: {
-    cutOffsetX: 90, // px each pile shifts left/right of center when cut apart
-    fanAmpX: 15, // stable per-card X fan within a pile, ± this many px
+    // Fractions of the current breakpoint's cardW (Card.tsx multiplies these
+    // by layout.cardW at the point of use), not flat px — a flat px value
+    // here previously read as a much wider split on mobile's ~110-137px
+    // cards than on desktop's ~235px ones (same absolute offset, very
+    // different fraction of card width). Ratios calibrated against the
+    // desktop value this replaced (90/235 ≈ 0.383, 15/235 ≈ 0.064) so
+    // desktop's look is unchanged; mobile now splits/fans proportionally
+    // instead of nearly a full card-width apart.
+    cutOffsetXRatio: 0.383, // fraction of cardW each pile shifts left/right of center when cut apart
+    fanAmpXRatio: 0.064, // fraction of cardW for the stable per-card X fan within a pile
     cutDuration: 190, // ms — merged<->cut transition, either direction
     holdMerged: 130, // ms — hold fully merged before cutting
     holdCut: 160, // ms — hold cut apart before recombining

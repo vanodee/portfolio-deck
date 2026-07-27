@@ -95,6 +95,30 @@ export function gatherAround(openId: string, layout: TableLayout) {
 }
 
 /**
+ * Keeps the gathered/stacked cards anchored to the open card's CURRENT grid
+ * slot while a project stays open (resize/orientation change/breakpoint
+ * crossover) — gatherAround() above only ever runs once, right after
+ * opening, so its fan-stack target (`layout.positions[openIdx]` at that
+ * moment) otherwise stays frozen even as the open card's own mesh (a
+ * separate, reactive effect in Card.tsx) keeps tracking the new layout.
+ * Invisible while it happens (every other card is hidden behind the open
+ * one through scaling/open/closing), but becomes visible the instant
+ * scatterFromCenter() runs on close — without this, cards would burst
+ * outward from that stale, pre-resize anchor point ("a part of the table"
+ * not matching the open card's actual current position) instead of from
+ * where the open card really is. Immediate, no stagger, and doesn't touch
+ * openPhase at all — unlike gatherAround(), this must be safe to call
+ * repeatedly on every layout change without re-triggering the entrance
+ * choreography or scheduling another phase transition.
+ */
+export function regatherAround(openId: string, layout: TableLayout) {
+  const { openIdx, ranked } = rankByDistance(openId, layout, true);
+  ranked.forEach(({ id }, rank) => {
+    cardHandles.get(id)?.regather(openIdx, rank);
+  });
+}
+
+/**
  * Close-reveal scatter stage: mirrors gather — the fanned stack bursts back
  * out to each card's own grid slot, farthest-first, before the interaction
  * fully resets.

@@ -26,11 +26,18 @@
   flex-direction: column;
   align-items: center;
   gap: 96px;
-  padding: 96px 48px 140px;
-  /* Bottom padding reserves clearance above the control dock (fixed,
-     bottom:20px, ~61px pill on desktop) so "Ready to deal?" never sits
-     under it. Mobile uses a different value (below) — the dock restacks
-     into a much taller column there, not the same pill. */
+  padding: 96px 0 140px;
+  /* No horizontal padding above ~767px — every section already caps its
+     own width (.hero 850px, .houseRulesBody 600px, .toolGrid 640px,
+     .brandGrid 992px) and centers via align-items:center, so the frame's
+     edge doesn't need its own separate gutter; removed to let the wider
+     play-area frame's extra room actually reach the content instead of
+     being eaten by a redundant fixed pad. Bottom padding reserves clearance
+     above the control dock (fixed, bottom:20px, ~61px pill on desktop) so
+     "Ready to deal?" never sits under it. Mobile uses a different value
+     (below) — the dock restacks into a much taller column there, not the
+     same pill, and still needs its own horizontal gutter since content
+     there runs edge-to-edge against the caps. */
 }
 
 /* Shared section-heading recipes — DS §2.1 (Meow Script, table-level
@@ -60,7 +67,9 @@
    300 / 0.1em) — reads as a section label here, not a fixed micro-tag. */
 .subheading {
   font-family: var(--font-ui);
-  font-size: 13px;
+  /* Same large-screen-legibility clamp pattern as .heroIntro/.bodyParagraph
+     below — flat 13px through ~1024px viewport width, up to 15px by ~1920px. */
+  font-size: clamp(13px, 0.22vw + 10.7px, 15px);
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -76,7 +85,11 @@
   flex-direction: row;
   justify-content: space-between;
   width: 100%;
-  max-width: 850px;
+  /* Raised from 850px (July 2026) alongside PhotoCard's ~10% size bump —
+     .heroPhotos' true native footprint (PhotoCardSpread, 2 photos) grew
+     from 248px to ~272px, so the row's own natural width grew to match;
+     see the 920px stacking breakpoint below, also re-verified. */
+  max-width: 900px;
   align-items: center;
   gap: 48px;
 }
@@ -89,7 +102,11 @@
 
 .heroIntro {
   font-family: var(--font-ui);
-  font-size: 16px;
+  /* Flat 16px (matches pre-existing size) up to ~1024px viewport width, then
+     eases up to 19px by ~1920px — legibility follow-up for large screens
+     (responsive audit, July 2026); mobile/typical-laptop widths are
+     unaffected since the vw term stays under the 16px floor until then. */
+  font-size: clamp(16px, 0.34vw + 12.5px, 19px);
   line-height: 1.7;
   color: var(--body-text-color);
   max-width: 480px;
@@ -199,7 +216,8 @@
 
 .bodyParagraph {
   font-family: var(--font-ui);
-  font-size: 16px;
+  /* Same large-screen-legibility clamp as .heroIntro above. */
+  font-size: clamp(16px, 0.34vw + 12.5px, 19px);
   line-height: 1.7;
   text-align: center;
   color: var(--body-text-color);

@@ -21,7 +21,7 @@
    natively within its bounds. */
 .frame {
   position: relative;
-  width: min(1200px, 100% - 192px);
+  width: min(1400px, 100% - 192px);
   height: 100%;
   display: flex;
   flex-direction: column;

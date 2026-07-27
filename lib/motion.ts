@@ -84,8 +84,12 @@ export const MOTION = {
   // Click-anywhere-on-spread cycles which card is frontmost (round-robin);
   // each card's peek offset is driven by its rank relative to the front card.
   photoSpread: {
-    offsetXStepPx: 34, // lateral peek offset per stacked rank
-    offsetYStepPx: 22, // vertical peek offset per stacked rank
+    // Scaled ~10% up alongside PhotoCard's own size bump (214x300 → 235x330,
+    // July 2026) — safe to edit directly here since this block isn't reused
+    // anywhere else (unlike experienceFan.desktop below, which the 404 page
+    // also reads).
+    offsetXStepPx: 37, // lateral peek offset per stacked rank
+    offsetYStepPx: 24, // vertical peek offset per stacked rank
     rotationStepDeg: 7, // in-plane tilt per stacked rank, at rest
     hoverRotationStepDeg: 14, // in-plane tilt per stacked rank, spread hovered (mouse only)
     // The front (rank 0) card sits outside the rank*step formula above (it's
@@ -235,11 +239,11 @@ export const MOTION = {
   // animates their contents rather than having them just vanish/reappear.
   // Placeholder values, same pending-tuning caveat as onboarding.
   tableNav: {
-    // px — must clear the play area's max width (DS §4.1, min(1200px, ...))
+    // px — must clear the play area's max width (DS §4.1, min(1400px, ...))
     // from any column's content-local position, or cards only partially
     // slide out of frame instead of fully exiting (verified via live
     // browser testing: 500px left a couple of columns still peeking in).
-    cardTranslateX: 1200,
+    cardTranslateX: 1400,
     cardDuration: 450, // ms per card (reuses deal.perCard's magnitude)
     cardStagger: 40, // ms between cards
     headingTranslateY: 60, // px, upward exit distance

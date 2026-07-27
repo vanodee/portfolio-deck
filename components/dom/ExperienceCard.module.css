@@ -11,9 +11,16 @@
 
 .card {
   position: relative;
-  width: 214px;
-  height: 300px;
-  padding: 24px;
+  /* Matches Home's card mesh (lib/layout.ts DESKTOP.cardW/cardH) and
+     PhotoCard — all three share one dimension, ~10% up from 214x300 (July
+     2026, large-screen legibility follow-up). Every other absolute pixel
+     value below (padding, corner marks, text block, font sizes) is scaled
+     by that same ~10% to preserve proportions; ExperienceCardSpread.tsx's
+     own CARD_W/CARD_H consts (and its fan step distances) are updated to
+     match in lockstep. */
+  width: 235px;
+  height: 330px;
+  padding: 26px;
   background-color: var(--card-front-bg);
   border-radius: 4px;
   box-shadow: var(--shadow-rest);
@@ -40,17 +47,17 @@
 }
 
 .cornerMarkTL {
-  top: 6px;
-  left: 6px;
-  width: 17.38px;
-  height: 16px;
+  top: 7px;
+  left: 7px;
+  width: 19px;
+  height: 18px;
 }
 
 .cornerMarkBR {
-  right: 7px;
-  bottom: 8px;
-  width: 17px;
-  height: 16px;
+  right: 8px;
+  bottom: 9px;
+  width: 19px;
+  height: 18px;
 }
 
 .content {
@@ -68,7 +75,7 @@
      in .card-local coords) with no extra inset needed. 24px (not more) —
      the mobile peek-stack's revealPx (lib/motion.ts) has to clear this
      plus the text block itself, so keeping this tight matters. */
-  padding-top: 24px;
+  padding-top: 26px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 2px;
   box-sizing: border-box;
@@ -78,24 +85,27 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
-  padding: 8px;
+  gap: 9px;
+  padding: 9px;
   /* Fixed (not max-width): ExperienceCardSpread.tsx's desktop fan relies on
      this box's right edge staying inside MOTION.experienceFan.desktop's
-     xStepPx (150) minus a clearance margin, so a following card's higher
-     z-index never covers it — a fixed width keeps that edge in the same
-     place regardless of how short any one line is. Left-aligned (not
-     centered) so the full xStepPx budget goes toward keeping text clear of
-     the next card, instead of half being spent on the covered side. */
-  width: 105px;
+     xStepPx (scaled locally to 165, from 150) minus a clearance margin, so
+     a following card's higher z-index never covers it — a fixed width
+     keeps that edge in the same place regardless of how short any one line
+     is. Left-aligned (not centered) so the full xStepPx budget goes toward
+     keeping text clear of the next card, instead of half being spent on the
+     covered side. Scaled from 105px in lockstep with the card (~10% up,
+     July 2026) so its share of the (also-scaled) xStepPx budget stays the
+     same fraction. */
+  width: 116px;
   box-sizing: border-box;
 }
 
 .dateRange {
   font-family: var(--font-ui);
-  font-size: 6px;
+  font-size: 7px;
   font-weight: 300;
-  letter-spacing: 2.4px;
+  letter-spacing: 2.6px;
   text-transform: uppercase;
   color: var(--card-front-text);
   text-align: left;
@@ -104,7 +114,7 @@
 
 .title {
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--card-front-text);
   text-align: left;
@@ -113,7 +123,7 @@
 
 .company {
   font-family: var(--font-ui);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 400;
   color: var(--card-front-text);
   text-align: left;

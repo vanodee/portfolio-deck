@@ -9,8 +9,18 @@ import ExperienceCard from "./ExperienceCard";
 import styles from "./ExperienceCardSpread.module.css";
 
 const MAX_CARDS = 4;
-const CARD_W = 214;
-const CARD_H = 300;
+// Matches ExperienceCard.module.css's .card size (~10% up from 214x300,
+// July 2026, large-screen legibility follow-up) — kept as local consts here
+// (not imported) since ExperienceCard.module.css can't export a JS value;
+// keep both in lockstep if this changes again.
+const CARD_W = 235;
+const CARD_H = 330;
+// The fan's own step distances scale by the same ~10% ratio as the card
+// (below), applied locally rather than editing MOTION.experienceFan.desktop
+// itself — that token is also reused verbatim by the 404 page's card fan
+// (NotFoundContent.tsx, at DigitCard's own separate/smaller size), which
+// this component's card-size change has no reason to affect.
+const FAN_SCALE = CARD_W / 214;
 
 // Static, non-interactive — capped at 4 (most recent roles only, per the
 // prompt: older history lives on the resume). Array-driven — reuses
@@ -104,7 +114,11 @@ export default function ExperienceCardSpread({
       : { duration: 0 };
 
   if (breakpoint === "mobile") {
-    const { revealPx } = MOTION.experienceFan.mobile;
+    // Scaled locally by FAN_SCALE (like the desktop step distances below) —
+    // the card's text block is proportionally bigger now too, so the peek
+    // height needs the same margin it always had against the longest
+    // title+company combination.
+    const revealPx = MOTION.experienceFan.mobile.revealPx * FAN_SCALE;
     const wrapHeight = Math.max(cards.length - 1, 0) * revealPx + CARD_H;
     return (
       <div className={styles.spread} style={{ width: CARD_W, height: wrapHeight }}>
@@ -127,7 +141,12 @@ export default function ExperienceCardSpread({
     );
   }
 
-  const { xStepPx, rotationStepDeg, liftPx } = MOTION.experienceFan.desktop;
+  // xStepPx/liftPx scaled locally by FAN_SCALE to match the bigger card (see
+  // FAN_SCALE's own comment above) — rotationStepDeg is an angle, so it's
+  // scale-invariant and used verbatim.
+  const { xStepPx: baseXStepPx, rotationStepDeg, liftPx: baseLiftPx } = MOTION.experienceFan.desktop;
+  const xStepPx = baseXStepPx * FAN_SCALE;
+  const liftPx = baseLiftPx * FAN_SCALE;
   const n = cards.length;
 
   // Each card's UNSCALED center position + rotation (bow shape: center

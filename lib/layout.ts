@@ -9,12 +9,18 @@ export type Breakpoint = "desktop" | "mobile";
 
 export const MOBILE_BREAKPOINT = 767;
 
-// DS §3.1 / §4.1
+// DS §3.1 / §4.1 — card size raised ~10% (214×300 → 235×330, July 2026,
+// large-screen legibility follow-up) with the 60px gutter scaled the same
+// ratio (→66px) so pitch keeps the "gutter consistent both axes" invariant
+// (pitchX/pitchY = cardW/cardH + 66). The card-front texture (lib/textures/)
+// is untouched — it's a fixed-proportion image stretched onto whatever mesh
+// size this produces, so its own text/watermark/image scale up for free in
+// lockstep with the mesh, no separate change needed there.
 export const DESKTOP = {
-  cardW: 214,
-  cardH: 300,
-  pitchX: 274,
-  pitchY: 360,
+  cardW: 235,
+  cardH: 330,
+  pitchX: 301,
+  pitchY: 396,
   cols: 4,
   outerPadX: 60,
   topPad: 96, // clearance under the pinned heading
@@ -25,7 +31,25 @@ export const DESKTOP = {
   // cards still render at the same size/density with no scrollbar, and
   // any rows beyond 2 simply extend the content height and scroll instead
   // of shrinking every card further.
-  referenceRows: 2,
+  //
+  // Fixed at the original 214x300 density's calibrated value (pitchY 360 +
+  // cardH 300 = 660) rather than derived from the current cardW/cardH/pitchY
+  // above — deliberately NOT `(referenceRows - 1) * pitchY + cardH`. When
+  // the July 2026 card-size bump (~10%) first computed this from the new
+  // (also ~10% bigger) pitchY/cardH, the height budget grew by the exact
+  // same ratio as the cards themselves, so on any viewport where height was
+  // already the binding constraint (most ordinary ~900px-tall windows), the
+  // two changes canceled out and cards rendered at their OLD pixel size —
+  // the size bump only became visible on ~1080px-tall+ viewports, silently
+  // defeating its own purpose everywhere else (caught live: reported as
+  // "cards don't seem to have increased in size"). Pinning this to the
+  // original calibration decouples "how much vertical room 2 rows need" from
+  // "how big a card's native ceiling is" — the same heightScale ratio as
+  // before now applies to the bigger native size, so the increase actually
+  // shows up at any viewport height, not just tall ones. Recalibrate by hand
+  // (live measurement) if the design's own "how much should 2 rows take up"
+  // target ever changes independently of card size.
+  referenceGridH: 660,
 } as const;
 
 // DS §4.2 — derived to preserve the 214:300 aspect ratio.
@@ -116,9 +140,8 @@ export function getLayout(
     outerPadX,
     topPad,
     bottomPad,
-    referenceRows,
+    referenceGridH,
   } = DESKTOP;
-  const referenceGridH = (referenceRows - 1) * pitchY + cardH;
   const heightScale = Math.min(1, (availableHeight - topPad - bottomPad) / referenceGridH);
   // A hard mobile/desktop breakpoint used to force maxCols (4) columns the
   // instant a viewport crossed 767px, even though 4 full-size columns need

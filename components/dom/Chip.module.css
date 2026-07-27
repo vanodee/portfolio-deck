@@ -132,7 +132,11 @@
   padding: 4px 9px;
   border-radius: 999px;
   font-family: var(--font-ui);
-  font-size: 12px;
+  /* Large-screen-legibility clamp (About page follow-up, July 2026) — flat
+     12px through ~1024px viewport width, up to 14px by ~1920px. Only this
+     label text scales; statValue/statLabel stay untouched since they're
+     scaled from the chip SVG's own 200px baseline (file header comment). */
+  font-size: clamp(12px, 0.22vw + 9.7px, 14px);
   color: var(--card-front-text);
   text-align: center;
   white-space: nowrap;

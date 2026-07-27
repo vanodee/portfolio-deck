@@ -91,7 +91,9 @@ export default function PhotoCardSpread({
   return (
     <div
       className={styles.spread}
-      style={{ width: 214 + extentX, height: 300 + extentY }}
+      // 235/330 match PhotoCard.module.css's .card size (~10% up from
+      // 214x300, July 2026 — see that file's header comment).
+      style={{ width: 235 + extentX, height: 330 + extentY }}
       role="button"
       tabIndex={0}
       aria-label="Photo card spread — activate to cycle to the next photo"

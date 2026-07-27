@@ -34,7 +34,10 @@ if (isAboutStep) {
   await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 }
 
-const CENTER_CARD = mobile ? { x: 195, y: 300 } : { x: 590, y: 320 }; // grid slot 1-ish
+// Desktop value recomputed for lib/layout.ts's DESKTOP.cardW/cardH/pitchX/
+// pitchY bump (235x330/301x396, was 214x300/274x360, July 2026) — verified
+// live against the real a11y card button's bounding box at 1440x900.
+const CENTER_CARD = mobile ? { x: 195, y: 300 } : { x: 598, y: 394 }; // grid slot 1-ish
 // Dock is now a wide, edge-pinned pill (liquid-glass restyle) — left group
 // sits near the pill's left edge rather than near horizontal center.
 const EYE = mobile ? { x: 52, y: 801 } : { x: 530, y: 849 };

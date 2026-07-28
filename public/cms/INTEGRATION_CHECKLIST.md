@@ -250,10 +250,15 @@ phase log below as originally written for history.
 - **`date` field dropped entirely** (no Sanity equivalent) — removed from `ProjectBase`. Card-front
   micro-label is now category-only, font bumped 6px→7px (`compositeCardFront.ts`); reading-pane meta
   line likewise drops the date segment. Synced to `card-table-portfolio-design-system.md` §3.2/§7.
-- **`isFlagship`** has no real schema field yet. `lib/getProjects.ts` temporarily hardcodes the
-  *first* fetched project as flagship (array-position rule, not data-driven) — `TODO` comments in
-  `data/types.ts` and `lib/getProjects.ts` mark this for replacement once a real field is wired up
-  in the other project's Sanity schema.
+- **`isFlagship`** — **Resolved 2026-07-28**: a real `isFlagship` boolean field now exists on the
+  other project's Sanity schema. `projectListingQuery` (`lib/queries.ts`) fetches it directly;
+  `lib/getProjects.ts` reads `r.isFlagship === true` (no more array-position hardcoding) and then
+  stable-sorts flagged project(s) to the front of the listing array — `store/useTableStore.ts`'s
+  `initialCards()` assigns `gridIndex`/`cardOrder` straight off that array order, so this is what
+  lands a flagship card in grid slot 0 and gives it the smallest deal stagger
+  (`lib/choreography.ts`'s `dealTable()`); ties (none or multiple flagged) keep their existing
+  `order(_createdAt desc)` relative order. The `TODO` comments in `data/types.ts` and
+  `lib/getProjects.ts` are removed.
 - **Per-card detail-fetch failures degrade locally** (an in-pane "couldn't load" message in
   `OpenCardOverlay`), distinct from the listing fetch's throw-to-global-boundary policy — the
   grid/cards already work regardless of one card's body text failing to load, so a full-app crash

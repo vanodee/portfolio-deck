@@ -443,9 +443,9 @@ interface ProjectBase {
   projectColor: string;
   projectColorDark: string;
   ctaColor: string;
-  /** TODO(isFlagship): no real Sanity field exists yet — lib/getProjects.ts
-   * temporarily flags just the first fetched project. Replace once a real
-   * field is wired up in the other project's schema. */
+  /** Sourced from Sanity's own `isFlagship` field (lib/getProjects.ts) —
+   * whichever project(s) it's true for are sorted to the front of the
+   * listing, so they land in grid slot 0 and deal first. */
   isFlagship: boolean;
   back: CardBackStyle;
 }

@@ -11,6 +11,7 @@ import { MOTION } from "@/lib/motion";
 import { exitCardsOffTable } from "@/lib/choreography";
 import { useTableStore } from "@/store/useTableStore";
 import A11yCardButtons from "./A11yCardButtons";
+import DeckA11yButton from "./DeckA11yButton";
 import AboutContent from "./AboutContent";
 import NotFoundContent from "./NotFoundContent";
 import PickACardHeading from "./PickACardHeading";
@@ -277,6 +278,9 @@ export default function PlayArea() {
             <div className={styles.scrollportWrap}>
               <div ref={proxyRef} className={styles.scrollProxy}>
                 {layout && <A11yCardButtons layout={layout} />}
+                {layout && appPhase === "onboarding" && (
+                  <DeckA11yButton layout={layout} frameRect={frameRect} />
+                )}
               </div>
               <div
                 ref={railRef}

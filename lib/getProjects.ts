@@ -27,6 +27,7 @@ interface RawListingProject {
   projectColor: string | null;
   projectColorDark: string | null;
   ctaColor: string | null;
+  isFlagship: boolean | null;
 }
 
 // Server-callable; deliberately no try/catch — the listing is load-bearing
@@ -39,7 +40,7 @@ export async function getProjectListing(): Promise<Project[]> {
     { next: { tags: ["project", "category"] } },
   );
 
-  return raw
+  const projects = raw
     .filter((r) => {
       const ok = r.category && KNOWN_CATEGORIES.has(r.category.title as Project["category"]);
       if (!ok) {
@@ -47,11 +48,8 @@ export async function getProjectListing(): Promise<Project[]> {
       }
       return ok;
     })
-    .map((r, i) => {
-      // TODO(isFlagship): no real Sanity field yet — temporarily flags only
-      // the first fetched project. Replace once isFlagship is wired up in
-      // the other project's Sanity schema.
-      const isFlagship = i === 0;
+    .map((r) => {
+      const isFlagship = r.isFlagship === true;
       return {
         id: r._id,
         title: r.title,
@@ -65,6 +63,16 @@ export async function getProjectListing(): Promise<Project[]> {
         back: backFor(isFlagship),
       } as Project;
     });
+
+  // Flagship project(s) deal first — store/useTableStore.ts's initialCards()
+  // assigns gridIndex/cardOrder straight off this array's order, so moving
+  // them to the front here is what lands them in grid slot 0 and gives them
+  // the smallest deal stagger (lib/choreography.ts's dealTable()), i.e.
+  // "first dealt" and "first grid slot" are the same lever. Stable sort:
+  // ties (no flagship, or more than one) keep their existing
+  // order(_createdAt desc) relative order.
+  projects.sort((a, b) => Number(b.isFlagship) - Number(a.isFlagship));
+  return projects;
 }
 
 // Shared fields, plus whichever category-specific block the query's

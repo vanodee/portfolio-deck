@@ -138,6 +138,11 @@ export default function ControlDock() {
   // the shell actually becomes visible, isMobile is already guaranteed
   // correct.
   const [breakpointReady, setBreakpointReady] = useState(false);
+  // One-time post-mount flip (not derived/cascading state — see comment
+  // above), the standard SSR/hydration-safe "now on the client" idiom;
+  // react-hooks/set-state-in-effect can't distinguish this from the
+  // cascading-render anti-pattern it targets.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setBreakpointReady(true), []);
   const skipLogoPhase = directAboutLoad && breakpointReady;
 

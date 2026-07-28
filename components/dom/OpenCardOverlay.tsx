@@ -70,6 +70,12 @@ export default function OpenCardOverlay() {
   useEffect(() => {
     if (!openCardId || !project) return;
     let current = true;
+    // Synchronous "loading" reset before the fetch starts, guarded by the
+    // `current` cleanup flag below against a stale response — the canonical
+    // fetch-in-effect pattern from react.dev/learn/you-might-not-need-an-effect
+    // itself (no data-fetching library in use here). Not derived/cascading
+    // state, which is what react-hooks/set-state-in-effect actually targets.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDetailState({ status: "loading" });
     getProjectDetail(openCardId, project.category)
       .then((detail) => {

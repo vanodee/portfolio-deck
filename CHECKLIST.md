@@ -32,11 +32,16 @@ for that phase's own detailed log — this list is everything that remains.
 
 ## Content & data gaps (not blocking, worth a deliberate call)
 
-- [ ] `isFlagship` **is hardcoded**, not CMS-driven — `lib/getProjects.ts` flags whichever project
+- [x] ~~`isFlagship` is hardcoded, not CMS-driven~~ — resolved 2026-07-28: a real `isFlagship`
   ```
-  happens to be first in the fetch order as flagship (`i === 0`), with a `TODO` to replace once
-  a real field exists in the other project's Sanity schema. Confirm the first-fetched project
-  is actually the one meant to read as flagship in production, or wire the real field first.
+  field now exists on the other project's Sanity schema. `lib/getProjects.ts` reads it directly
+  (`r.isFlagship === true`) instead of flagging array position `0`. Flagship project(s) are then
+  stable-sorted to the front of the listing array — since `store/useTableStore.ts`'s
+  `initialCards()` assigns `gridIndex`/`cardOrder` straight off that array's order, this is what
+  lands them in grid slot 0 (top-left) and gives them the smallest deal stagger
+  (`lib/choreography.ts`'s `dealTable()`), i.e. "dealt first" and "first grid slot" are the same
+  lever. Verified against live data: exactly one project (Cashare) is flagged true; confirmed via
+  a running build that it lands in grid slot 0 after the deal settles.
   ```
 - [ ] **Only 2 of 3 photo slots filled** in the About page's Hero photo spread (`data/photos.ts`) —
   ```

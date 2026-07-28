@@ -43,7 +43,8 @@ export const projectListingQuery = groq`
     previewColor,
     projectColor,
     projectColorDark,
-    ctaColor
+    ctaColor,
+    isFlagship
   }
 `;
 

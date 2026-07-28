@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MOTION } from "@/lib/motion";
 import { openEaseBezierPoints } from "@/lib/easing";
 import { useTableStore } from "@/store/useTableStore";
+import { beginDeal } from "@/lib/choreography";
 import StandaloneLogo from "./StandaloneLogo";
 import styles from "./OnboardingScreen.module.css";
 
@@ -23,6 +25,27 @@ export default function OnboardingScreen() {
   // No visible effect on a normal-speed load: canvasReady is already true
   // long before subheadingDelay elapses.
   const canvasReady = useTableStore((s) => s.canvasReady);
+
+  // Keyboard/AT path alongside DeckA11yButton's focusable button — Space and
+  // Enter are the two keys most reliably passed through even under a screen
+  // reader's browse-mode key interception (unlike an arbitrary "any key"
+  // handler), and neither collides with Tab or other page navigation.
+  // Modifier combos and repeats are ignored so held keys/OS shortcuts aren't
+  // hijacked; preventDefault stops Space's default page-scroll behavior
+  // (harmless here since scroll is already disabled pre-deal, but avoided
+  // for cleanliness).
+  useEffect(() => {
+    if (!showing) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        beginDeal();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showing]);
 
   // Subheading can't start until BOTH "Hello!"'s translate-into-place AND
   // the cards' own fade-in (Card.tsx's entrance spring) have finished —
@@ -73,7 +96,8 @@ export default function OnboardingScreen() {
                     ease: openEaseBezierPoints,
                   }}
                 >
-                  Tap the deck to deal yourself in
+                  Tap the deck or press <span className={styles.noWrap}>space/enter</span> to
+                  deal yourself in
                 </motion.p>
               )}
             </div>

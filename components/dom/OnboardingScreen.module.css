@@ -45,13 +45,22 @@
   white-space: nowrap;
 }
 
-/* Same recipe as TableHeader's .tagline (DS §1.5 / §2.2). */
+/* Same recipe as TableHeader's .tagline (DS §1.5 / §2.2). Constrained to a
+   max-width (rather than left as one long line) so the longer "tap or press
+   a key" copy wraps into two roughly balanced, centered lines instead of a
+   single wide one. */
 .subheading {
   font-size: 16px;
   font-weight: 300;
   letter-spacing: 0.1em;
   color: var(--tagline-color);
+  max-width: 288px;
+  text-align: center;
   /* opacity animated by OnboardingScreen.tsx (Framer Motion), 0 -> 0.5 */
+}
+
+.noWrap {
+  white-space: nowrap;
 }
 
 @media (max-width: 767px) {

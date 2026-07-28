@@ -1,12 +1,20 @@
 import type { CardBackStyle } from "@/data/types";
 import { tintedAsset } from "./tintSvg";
 
-// DS §3.1 card back, composited at 2× (428×600). All geometry in source px
-// then doubled: white shell (4px r), bg fill inset 8 (2px r), circuit trace
-// clipped to a 192×279 centered window, 1px inner border inset 10 (2px r),
-// logo mark 50×46 centered.
-
-export const TEX_SCALE = 2;
+// DS §3.1 card back, composited at 2.8× (~599×840). All geometry in source
+// px then multiplied by TEX_SCALE: white shell (4px r), bg fill inset 8
+// (2px r), circuit trace clipped to a 192×279 centered window, 1px inner
+// border inset 10 (2px r), logo mark 50×46 centered.
+//
+// Raised from 2x (July 2026), proportionally to the reading pane's own max
+// width increase (1000px -> 1400px, lib/layout.ts getReadingPane, DS §4.3)
+// — this texture is a fixed-proportion image stretched onto whatever size
+// the open-card mesh scales to (scale = pane.width / layout.cardW,
+// Card.tsx), so raising the pane's ceiling alone would upscale the SAME
+// 428px-wide texture further (2.34x -> 3.27x at the new cap) and read
+// visibly softer/blurrier once a card is open on a wide screen. 2.8x keeps
+// the upscale ratio at the new cap roughly what it was at the old one.
+export const TEX_SCALE = 2.8;
 export const CARD_W = 214;
 export const CARD_H = 300;
 

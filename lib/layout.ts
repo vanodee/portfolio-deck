@@ -194,7 +194,13 @@ export function getLayout(
  */
 export function getReadingPane(viewportW: number, viewportH: number) {
   const mobile = viewportW <= MOBILE_BREAKPOINT;
-  const width = mobile ? viewportW - 16 : Math.min(1000, viewportW - 32);
+  // 1400px cap matches the play area's own max width (PlayArea.module.css
+  // .frame, DS §4.3) — raised from 1000px, July 2026. Body-copy elements
+  // (OpenCardOverlay's .heroDescription/.body, ProjectBodyShared's various
+  // paragraph text) carry their own separate max-width so reading measure
+  // doesn't stretch past a comfortable line length at the new cap; grids/
+  // rows/media still use the pane's full width.
+  const width = mobile ? viewportW - 16 : Math.min(1400, viewportW - 32);
   const top = mobile ? 8 : Math.max(24, viewportH * 0.06);
   return { width, top };
 }

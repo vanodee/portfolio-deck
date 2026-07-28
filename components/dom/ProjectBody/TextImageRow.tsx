@@ -42,7 +42,7 @@ export default function TextImageRow({
       </div>
       {hasMedia && (
         <div className={styles.rowImageContainer}>
-          <Media image={image} video={video} videoPoster={videoPoster} alt={alt} className={styles.mediaFill} />
+          <Media image={image} video={video} videoPoster={videoPoster} alt={alt} className={styles.rowImage} />
         </div>
       )}
     </div>

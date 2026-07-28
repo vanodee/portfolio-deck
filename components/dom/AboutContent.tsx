@@ -77,7 +77,7 @@ export default function AboutContent() {
           <div className={styles.heroText}>
             <h1 className={styles.heroHeading}>Nice to meet you...</h1>
             <p className={styles.heroIntro}>
-              I sit at the intersection of design, engineering, and AI-assisted building, turning ideas into products people actually enjoy using. This site is one example: designed, built, and brought to life by me, top to bottom.
+              I&apos;m your <i>design, engineering, and AI-assisted building guy</i>, turning ideas into products people actually enjoy using. This site is one example: designed, built, and brought to life by me, top to bottom.
             </p>
             <div className={styles.statChips}>
               <Chip

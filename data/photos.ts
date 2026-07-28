@@ -9,12 +9,12 @@ export const PHOTOS: PhotoCardData[] = [
     id: "photo-1",
     image: "/assets/photo2.png",
     name: "Stevano Peters",
-    subtitle: "THE DESIGNER • DEALER'S CHOICE",
+    subtitle: "THE DESIGNER",
   },
   {
     id: "photo-2",
     image: "/assets/photo1.png",
     name: "Stevano Peters",
-    subtitle: "THE BUILDER • AI-FLUENT",
+    subtitle: "THE BUILDER",
   },
 ];

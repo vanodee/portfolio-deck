@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, Meow_Script } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import TableHeader from "@/components/dom/TableHeader";
 import PlayArea from "@/components/dom/PlayArea";
 import ControlDock from "@/components/dom/ControlDock";
@@ -87,6 +88,7 @@ export default async function RootLayout({
         <TableHeader />
         <ControlDock />
         {children}
+        <Analytics />
       </body>
     </html>
   );

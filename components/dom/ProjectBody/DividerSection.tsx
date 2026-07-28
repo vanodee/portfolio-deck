@@ -23,6 +23,9 @@ export default function DividerSection({ title, image, video, videoPoster }: Div
         videoPoster={videoPoster}
         alt={title || "Section divider"}
         className={styles.mediaFill}
+        // Same full pane content width as SoloImageContainer — dividerImageContainer
+        // sits directly in .section too.
+        sizes="(max-width: 767px) 100vw, (max-width: 1463px) calc(100vw - 112px), 1320px"
       />
       {title && <h2>{title}</h2>}
     </div>

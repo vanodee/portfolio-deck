@@ -84,7 +84,11 @@ export default function AboutContent() {
                 variant="stat"
                 value="06+"
                 label="Years at the Table"
-                color="var(--card-back-bg)"
+                // Literal, not var(--card-back-bg) (perf audit, 2026-07-28) —
+                // Chip's face is now a cached data-URI <svg> sprite (lib/chipSprite.ts),
+                // an isolated document with no access to this page's CSS custom
+                // properties, so a var() reference can't resolve inside it.
+                color="#130a5d"
                 revealArmed={armed}
                 revealTriggered={heroTriggered}
                 revealDelayMs={statChipsBaseDelay}
@@ -93,7 +97,8 @@ export default function AboutContent() {
                 variant="stat"
                 value="150+"
                 label="Hands Played (Projects)"
-                color="var(--flagship-gold)"
+                // Literal, not var(--flagship-gold) — see comment above.
+                color="#b8860b"
                 revealArmed={armed}
                 revealTriggered={heroTriggered}
                 revealDelayMs={statChipsBaseDelay + statChipStep}

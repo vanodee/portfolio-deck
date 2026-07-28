@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useIsNotFoundRoute } from "@/hooks/useIsNotFoundRoute";
@@ -9,12 +10,22 @@ import { getLayout, type FrameRect } from "@/lib/layout";
 import { MOTION } from "@/lib/motion";
 import { exitCardsOffTable } from "@/lib/choreography";
 import { useTableStore } from "@/store/useTableStore";
-import TableCanvas from "@/components/canvas/TableCanvas";
 import A11yCardButtons from "./A11yCardButtons";
 import AboutContent from "./AboutContent";
 import NotFoundContent from "./NotFoundContent";
 import PickACardHeading from "./PickACardHeading";
 import styles from "./PlayArea.module.css";
+
+// Code-split out of the shared root-layout bundle (perf audit, 2026-07-28) —
+// three.js/@react-three/fiber/drei/@react-spring/three otherwise ship on
+// every route (this component is mounted unconditionally in app/layout.tsx),
+// even though TableCanvas only ever renders while onHome. ssr:false changes
+// nothing observable: `layout` below is always null during SSR anyway
+// (contentWidth/availableHeight only populate via a client-only
+// ResizeObserver effect), so TableCanvas already never rendered server-side.
+const TableCanvas = dynamic(() => import("@/components/canvas/TableCanvas"), {
+  ssr: false,
+});
 
 // How quickly the applied scroll position eases toward its target each
 // frame (0..1) — higher is snappier, lower is glidier. Wheel/touch input
@@ -41,6 +52,15 @@ export default function PlayArea() {
   const pathname = usePathname();
   const onHome = pathname === "/";
   const notFound = useIsNotFoundRoute();
+  // Fires the dynamic import()'s chunk fetch the instant we know we're on
+  // Home, rather than waiting for `layout` to resolve a tick later off the
+  // ResizeObserver measurement below — shares the same module-loading
+  // promise as the dynamic() call above, so this doesn't double-fetch, just
+  // starts it earlier. Never fires off Home, keeping /about and 404 clean.
+  useEffect(() => {
+    if (!onHome) return;
+    import("@/components/canvas/TableCanvas");
+  }, [onHome]);
   // Dashed border stays invisible through Home's own onboarding gate,
   // fading in once the deck is clicked (appPhase leaves "onboarding") —
   // alpha-only, so the frame's own geometry/scroll-boundary role never
@@ -143,8 +163,17 @@ export default function PlayArea() {
   // Eases the applied scroll position toward targetScrollRef every frame,
   // and mirrors it onto the visible/draggable scrollbar rail. Wheel/touch
   // input (below) only ever nudges the target — this is what turns raw,
-  // discrete wheel deltas into a smooth glide instead of a jump.
+  // discrete wheel deltas into a smooth glide instead of a jump. Keyed on
+  // onHome (perf audit, 2026-07-28 — was `[]`, ran forever regardless of
+  // route) for the same reason as the availableHeight/rail-listener effects
+  // above/below: proxyRef/railRef only exist while onHome, so the no-op
+  // `if (proxy)` guard was previously still rescheduling a frame forever on
+  // /about and the 404 route to check a null ref and do nothing. Stopping
+  // (rather than just no-opping) loses no state — scrollYRef/targetScrollRef
+  // already sat untouched while proxy was null, same as before; the loop
+  // just resumes from wherever they were once onHome flips back true.
   useEffect(() => {
+    if (!onHome) return;
     let raf: number;
     const tick = () => {
       const proxy = proxyRef.current;
@@ -164,7 +193,7 @@ export default function PlayArea() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [onHome]);
 
   // The rail is the only real draggable scrollbar (native, clickable arrows
   // included) — its own scroll events are genuine user drag/click input,

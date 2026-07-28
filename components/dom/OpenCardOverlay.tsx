@@ -220,7 +220,15 @@ export default function OpenCardOverlay() {
                           className={styles.toolItem}
                           style={{ "--toolColor": tool.color } as React.CSSProperties}
                         >
-                          {tool.icon && <img src={tool.icon} alt="" />}
+                          {tool.icon && (
+                            <img
+                              // .toolItem img is a fixed 20px box at every
+                              // breakpoint (OpenCardOverlay.module.css) — 2x
+                              // that for retina.
+                              src={sanityImageAtWidth(tool.icon, 40)}
+                              alt=""
+                            />
+                          )}
                           <span>{tool.title}</span>
                         </div>
                       ))}

@@ -83,6 +83,13 @@ interface TableStore {
 
   appPhase: AppPhase;
   dealComplete: boolean;
+  /** Whether TableCanvas (dynamically imported, PlayArea.tsx — perf audit
+   * 2026-07-28) has actually mounted, i.e. DeckClickCatcher's hitbox exists.
+   * Gates OnboardingScreen's "Tap the deck to deal yourself in" subheading
+   * so it never invites a click the deck can't yet receive on a slow chunk
+   * fetch. Same "set once, never reset" convention as aboutSectionsRevealed
+   * — the module stays cached once loaded, so a later remount is instant. */
+  canvasReady: boolean;
   allRevealed: boolean;
   openCardId: string | null;
   openPhase: OpenPhase;
@@ -149,6 +156,11 @@ interface TableStore {
    * true — never resets (see aboutSectionsRevealed's doc comment above). */
   markAboutSectionsRevealed: () => void;
 
+  /** Called from TableCanvas's own mount effect — the most direct proof the
+   * dynamically-imported chunk has actually loaded and rendered, not just
+   * that the fetch resolved. Guarded no-op if already true. */
+  markCanvasReady: () => void;
+
   setActiveCategory: (title: string | null) => void;
   toggleCategoryMenu: () => void;
   closeCategoryMenu: () => void;
@@ -209,6 +221,7 @@ export const useTableStore = create<TableStore>()((set, get) => ({
   categoryMenuOpen: false,
 
   aboutSectionsRevealed: false,
+  canvasReady: false,
 
   hydrateProjects: (projects) => {
     if (get().cardOrder.length > 0) return;
@@ -332,6 +345,11 @@ export const useTableStore = create<TableStore>()((set, get) => ({
   markAboutSectionsRevealed: () => {
     if (get().aboutSectionsRevealed) return;
     set({ aboutSectionsRevealed: true });
+  },
+
+  markCanvasReady: () => {
+    if (get().canvasReady) return;
+    set({ canvasReady: true });
   },
 
   setActiveCategory: (title) => set({ activeCategory: title }),

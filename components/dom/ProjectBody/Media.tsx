@@ -13,14 +13,18 @@ interface MediaProps {
   videoPoster?: string | null;
   alt: string;
   className?: string;
+  // Per-caller CSS-condition string (perf audit follow-up, 2026-07-28) — lets
+  // next/image's own srcset skip desktop-bucket sizes on narrower containers
+  // instead of assuming the full 1920px intrinsic width always applies.
+  sizes?: string;
 }
 
-export default function Media({ image, video, videoPoster, alt, className }: MediaProps) {
+export default function Media({ image, video, videoPoster, alt, className, sizes }: MediaProps) {
   if (video) {
     return <AutoplayVideo src={video} poster={videoPoster} className={className} />;
   }
   if (!image) return null;
   return (
-    <Image className={className} src={image} width={1920} height={1080} alt={alt} />
+    <Image className={className} src={image} width={1920} height={1080} alt={alt} sizes={sizes} />
   );
 }

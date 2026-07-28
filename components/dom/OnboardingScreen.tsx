@@ -16,6 +16,13 @@ import styles from "./OnboardingScreen.module.css";
 export default function OnboardingScreen() {
   const appPhase = useTableStore((s) => s.appPhase);
   const showing = appPhase === "onboarding";
+  // TableCanvas is dynamically imported (perf audit, 2026-07-28) — on a slow
+  // chunk fetch this can lag well past the timings below, so the subheading
+  // (the explicit "click here" invitation) additionally waits on it, rather
+  // than ever inviting a click DeckClickCatcher isn't mounted to receive.
+  // No visible effect on a normal-speed load: canvasReady is already true
+  // long before subheadingDelay elapses.
+  const canvasReady = useTableStore((s) => s.canvasReady);
 
   // Subheading can't start until BOTH "Hello!"'s translate-into-place AND
   // the cards' own fade-in (Card.tsx's entrance spring) have finished —
@@ -54,19 +61,21 @@ export default function OnboardingScreen() {
               >
                 Hello!
               </motion.h1>
-              <motion.p
-                className={styles.subheading}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0, transition: { duration: MOTION.onboarding.helloFadeOut / 1000 } }}
-                transition={{
-                  duration: MOTION.onboarding.subheadingFadeIn / 1000,
-                  delay: subheadingDelay / 1000,
-                  ease: openEaseBezierPoints,
-                }}
-              >
-                Tap the deck to deal yourself in
-              </motion.p>
+              {canvasReady && (
+                <motion.p
+                  className={styles.subheading}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.5 }}
+                  exit={{ opacity: 0, transition: { duration: MOTION.onboarding.helloFadeOut / 1000 } }}
+                  transition={{
+                    duration: MOTION.onboarding.subheadingFadeIn / 1000,
+                    delay: subheadingDelay / 1000,
+                    ease: openEaseBezierPoints,
+                  }}
+                >
+                  Tap the deck to deal yourself in
+                </motion.p>
+              )}
             </div>
           )}
         </AnimatePresence>

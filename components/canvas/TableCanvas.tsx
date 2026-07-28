@@ -113,6 +113,14 @@ export default function TableCanvas({
 
   useEffect(() => stopMomentum, []);
 
+  // Proves the dynamically-imported chunk (PlayArea.tsx) has actually
+  // mounted, not just fetched — OnboardingScreen's "Tap the deck to deal
+  // yourself in" gates on this so it never invites a click DeckClickCatcher
+  // (a child of CardsLayer below) isn't yet in the tree to receive.
+  useEffect(() => {
+    useTableStore.getState().markCanvasReady();
+  }, []);
+
   return (
     <div
       style={{

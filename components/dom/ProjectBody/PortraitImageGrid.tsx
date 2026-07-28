@@ -34,6 +34,12 @@ export default function PortraitImageGrid({
           width={1080}
           height={1920}
           alt={alt}
+          // 3-column grid across the pane's content width: pane caps at
+          // 1400px (lib/layout.ts getReadingPane) minus .section's 80px
+          // total side padding minus 2 16px gaps, /3 = 429px; below 768px,
+          // pane = viewportW - 16px minus .section's 48px padding minus 2
+          // 12px gaps (ProjectBodyShared.module.css's 768px block), /3.
+          sizes="(max-width: 767px) calc((100vw - 88px) / 3), (max-width: 1463px) calc((100vw - 144px) / 3), 429px"
         />
       ))}
       {vids.map((src, i) => (

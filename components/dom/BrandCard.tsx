@@ -5,6 +5,7 @@ import type { Brand } from "@/data/types";
 import { MOTION } from "@/lib/motion";
 import { useState } from "react";
 import { useEntranceHoldReveal } from "@/hooks/useEntranceHoldReveal";
+import { sanityImageAtWidth } from "@/lib/sanityImage";
 import styles from "./BrandCard.module.css";
 
 // Fixed frame + swappable content layer, same structural idea as Chip.tsx
@@ -131,7 +132,10 @@ export default function BrandCard({
         {isRevealed ? (
           <motion.img
             key="logo"
-            src={brand.logoSrc}
+            // .logo's content box tops out at 198px (230px card - 2rem padding,
+            // BrandCard.module.css) at desktop; 2x that for retina covers the
+            // mobile-shrunk box too since it's the same source image.
+            src={sanityImageAtWidth(brand.logoSrc, 396)}
             alt=""
             className={styles.logo}
             variants={logoVariants}

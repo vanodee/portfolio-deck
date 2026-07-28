@@ -120,7 +120,178 @@ autoplay video, revalidation webhook, About page).
 
 ## Phase 4 — open decision (PRD §9)
 
-- [ ] Decide whether this becomes the primary portfolio front end, a permanent alternate route, or stays a standalone experiment (revisit after Phase 1–2 results)
+- [x] Decide whether this becomes the primary portfolio front end, a permanent alternate route, or stays a standalone experiment (revisit after Phase 1–2 results) - stand alone experiment. Main portfolio lives on stevano.dev. This lives on table.stevano.dev, offereing a uniqyue experience.
+
+
+
+## Performance audit findings (2026-07-28) — ordered by overall impact
+
+Whole-project perf pass triggered by reported About-page scroll slowdown
+(tools section, especially mobile). Ordered by total impact across all
+routes/devices (bundle size, network payload, parse/hydrate cost), not just
+the scroll-jank symptom — items 3-4 are the bigger win for that specific
+symptom even though they rank lower here. Work through individually.
+
+- [x] **Sanity images fetched at full original resolution site-wide** — every GROQ query
+  ```
+  (`lib/queries.ts`: siteSettingsQuery, featuredToolsQuery, projectListingQuery, the ~150-field
+  projectDetailQuery) dereferences `asset->url` directly with no width/format/quality params.
+  `@sanity/image-url` is already an installed dependency but unused. Rendered via raw <img> tags
+  in Chip.tsx/BrandCard.tsx (not next/image, unlike ProjectBody/Media.tsx which does this right).
+  Biggest single lever in the app: hits network payload, decode cost, and LCP on every route,
+  worst on the project reading-pane (most images per view) and worst on mobile networks/CPUs.
+
+  Fixed: reused the existing `sanityImageAtWidth()` helper (lib/sanityImage.ts — already proven
+  for the canvas card-texture compositor and the reading-pane hero/closing images) at the three
+  spots that were still passing raw, unsized Sanity URLs straight to an `<img>` — Chip.tsx's tool
+  logo (60w, 2x its fixed 30px box), BrandCard.tsx's client logo (396w, 2x its 198px desktop box),
+  and OpenCardOverlay.tsx's tool icon (40w, 2x its fixed 20px box). Kept these as plain `<img>`
+  rather than switching to next/image or the @sanity/image-url builder: Chip/BrandCard animate
+  their logo via Framer Motion's `motion.img` in an AnimatePresence swap, which next/image's
+  `Image` doesn't drop into cleanly, and the builder needs raw asset refs (not the pre-resolved
+  `asset->url` strings these queries return) to earn its keep. The ~150-field projectDetailQuery
+  body images already route through next/image (ProjectBody/Media.tsx, PortraitImageGrid.tsx),
+  which handles format negotiation/resizing automatically — follow-up open below.
+  ```
+  - [x] Open follow-up: those next/image usages have no `sizes` prop, so Next assumes the full
+    intrinsic `width` (1920/1080) applies and won't shrink the srcset for narrower mobile
+    containers — smaller win than the raw-`<img>` fix above (bounded by next/image's own
+    deviceSizes breakpoints, not unbounded like full original resolution was) and requires
+    mapping each container's actual fluid width (rowImageContainer, soloImageContainer,
+    portraitImageContainer) to correct `sizes` values per breakpoint to avoid under-serving.
+
+    Fixed: added a `sizes` prop to `Media.tsx` (passed through to its `<Image>`) and a
+    `sizes` string at each call site — `TextImageRow.tsx` (50/50 row), `SoloImageContainer.tsx`
+    and `DividerSection.tsx` (full pane content width), and `PortraitImageGrid.tsx`'s own
+    `next/image` call (3-column grid) — each using plain CSS-condition strings tied to the
+    codebase's existing 767px breakpoint and `lib/layout.ts`'s `getReadingPane` pane-width
+    formula, rather than threading the pane's exact JS-computed width through
+    `PaneScrollRootContext`: next/image's srcset only offers a handful of discrete width
+    buckets, so a `sizes` hint just needs to land in the right bucket, not be pixel-exact —
+    a live-data path added no real accuracy over static breakpoint math here.
+  ```
+- [x] **Three.js/R3F/drei/@react-spring/three ship in the bundle on every route** — `PlayArea.tsx`
+  ```
+  statically imports TableCanvas (components/canvas/TableCanvas.tsx), and PlayArea is mounted
+  unconditionally in app/layout.tsx. The canvas only *renders* when `onHome`, but static import
+  means the whole Three.js-family bundle is still parsed/executed on /about and the 404 route
+  even though it's never used there. JS parse/compile is disproportionately expensive on mobile
+  CPUs. Fix: `next/dynamic(() => import(".../TableCanvas"), { ssr: false })` so it's a separate
+  chunk only fetched when onHome.
+
+  Fixed: `PlayArea.tsx` now loads TableCanvas via `next/dynamic(..., { ssr: false })`, plus a
+  `useEffect` gated on `onHome` (not `layout`) that fires the same `import()` the instant we
+  know we're on Home, so the fetch starts in parallel with the first ResizeObserver measurement
+  rather than after it. Verified the split actually worked: `npm run build` then diffed
+  `.next/static/chunks` against both routes' `build-manifest.json` — the ~937KB chunk containing
+  `THREE.`/`react-three` code is absent from `rootMainFiles` (identical, <460KB total, for both
+  `/` and `/about`).
+
+  This surfaced a real regression, caught by `node scripts/snap.mjs <dir> load-sequence` (dev
+  mode): TableCanvas's chunk can now finish loading *after* OnboardingScreen's "Tap the deck to
+  deal yourself in" prompt has already appeared, since that prompt was previously only timed off
+  `MOTION.onboarding` constants under the assumption TableCanvas (and DeckClickCatcher, its
+  child) was always available synchronously. A click on the deck during that window silently did
+  nothing — DeckClickCatcher's hitbox didn't exist yet. Fixed by adding `canvasReady` to
+  `useTableStore` (same "set once, never reset" convention as `aboutSectionsRevealed`), set from
+  TableCanvas's own mount effect (proof it actually rendered, not just that the fetch resolved),
+  and gating the subheading's render on it in `OnboardingScreen.tsx` — the invitation to click
+  now never appears before the click can land. No visible effect on a normal-speed load:
+  `canvasReady` is already true long before the existing ~1120ms subheading timer elapses;
+  confirmed via a production build (`next build && next start`) that the deck/subheading/deal
+  flow behaves identically to before. (Separately, while debugging this, found that
+  scripts/snap.mjs's own hardcoded `DECK` click coordinate is stale against the current card
+  layout — pre-existing, unrelated to this fix, worth a follow-up recalibration per the script's
+  own "recompute if layout constants change" comment.)
+  ```
+- [x] **`ControlDock`'s stacked `backdrop-filter` layers over scrolling content** — `dockShell`,
+  ```
+  every button (`.buttonGlass`), `.categoryMenuRow`, and `.toggleTrack` (ControlDock.module.css)
+  all use backdrop-filter, on a `position: fixed` element mounted on every route. Fixed +
+  backdrop-filter + active scroll underneath forces continuous GPU re-sampling per scroll frame —
+  a well-documented mobile Safari/Chrome jank source, and it geographically overlaps the bottom of
+  the About page (Tools/Brands/CTA) where the user noticed the slowdown. Primary suspect for the
+  reported symptom. Fix: reduce blur radius or drop backdrop-filter for a solid fill below a
+  breakpoint, or reduce the number of independently-blurred layers.
+
+  Fixed: the two-layer glass structure (outer pill + brighter nested button/toggle layer) was a
+  deliberate contrast decision (design-system.md §1.4), but each layer independently applying its
+  own `backdrop-filter` was an oversight, not part of that decision — on the About page this
+  stacked 7 separately-blurred layers (dockShell + 3 social buttons + Resume + toggleThumb +
+  toggleTrack), all `position: fixed`, all forcing their own GPU re-sample every scroll frame.
+  Removed `backdrop-filter` from `.buttonGlass` and `.toggleTrack`, keeping it only on
+  `.dockShell` — every element that had its own blur lives spatially inside the shell's own rect,
+  and both `dock-fill`/`dock-button-fill` already stack a solid layer under their gradient
+  (design-system.md's July 2026 revision), so a second blur pass over that already-blurred,
+  already-opaque surface was providing negligible visible contribution. The brighter/nested
+  contrast (the actual point of the two-layer design) comes entirely from the fill/border/shadow
+  tokens, untouched here. `.categoryMenuRow` (the category-filter popover) deliberately keeps its
+  own real blur — it floats over raw table/page content, not over `.dockShell`, so there's nothing
+  already-blurred beneath it, and it's only mounted while the menu is open (Home only), not part
+  of the always-fixed persistent chrome that motivated this fix.
+
+  Verified with a before/after pixel diff (production build, `/about`, desktop + mobile + hover,
+  via a one-off Playwright canvas diff): max per-pixel channel delta of 5/255, zero pixels over a
+  12/255 threshold — visually indistinguishable from the 7-layer original. Synced to
+  design-system.md via `/sync-specs` (§1.4/§3.3 + token table, dated).
+  ```
+- [x] **`Chip.tsx`'s per-instance SVG filter stack** — every chip (stat and tool variants) renders
+  ```
+  two <svg> blocks with 3 unique <filter> defs each (feGaussianBlur/feColorMatrix/feComposite/
+  feBlend) plus 2 radial-gradient defs, IDs generated per-instance via useId() so nothing can be
+  shared across the ~8+ tool chips rendered simultaneously in the grid. Expensive to
+  composite/rasterize, especially on mobile where these often fall back to software rendering.
+  Secondary suspect for the reported symptom, scoped to the About page's hero/tools sections.
+  Fix: bake into a pre-rendered PNG/WebP sprite per color (same pattern as lib/textures/ already
+  uses for card art), or replace with cheaper CSS box-shadow/gradient approximations.
+
+  Fixed: none of the filter/gradient defs actually depend on `--chip-color` — only 4 path fills do
+  (the rest, including the entire `chipLight` gloss overlay, are pure geometry/opacity, identical
+  regardless of color) — so `useId()`'s per-instance IDs were guaranteeing zero reuse of otherwise-
+  identical work. New `lib/chipStructureDataUrl`/`chipLightDataUrl` (`lib/chipSprite.ts`) render the
+  same SVG markup into a `data:image/svg+xml,...` string, cached per distinct resolved color in a
+  plain `Map` (no canvas/PNG conversion needed — the browser's own SVG engine does the identical
+  one-time rasterization). `Chip.tsx`'s two live `<svg>` blocks became `<img>` tags pointing at the
+  cached URLs; `useId()` and the raw path constants were removed entirely. Beyond deduplicating the
+  DOM/parse cost, this plausibly also removes an ongoing per-frame cost: live SVG filters are known
+  to force re-running the whole filter pipeline whenever the filtered element (or an ancestor)
+  animates a transform, rather than being reusable as a static texture — Chip's hover-lift and
+  entrance stagger both do exactly that, so every hover/reveal frame was likely re-triggering all 3
+  filters live before this fix.
+
+  One wrinkle: a `data:image/svg+xml` document is fully isolated from the host page's CSS, so a
+  `var(--token)` reference can't resolve inside it — stat chips previously passed
+  `color="var(--card-back-bg)"`/`"var(--flagship-gold)"` (`AboutContent.tsx`), so those became
+  literal hex values (`#130a5d`/`#b8860b`, matching `app/tokens.css` exactly) instead. Tool chips
+  were already passing literal hex/rgb from `chipTint()`, unaffected.
+
+  Verified with a before/after pixel diff (production build, `/about` hero stat chips + tools grid
+  + hover, desktop + mobile): mobile came back pixel-identical (0.000% diff); desktop showed a small
+  (<1.7%), stable, deterministic difference confined to a thin anti-aliased ring right at each
+  chip's vector edge (confirmed via direct visual comparison, not just the diff numbers) — an
+  expected artifact of switching from a live inline `<svg>` to an `<img>`-embedded data-URI SVG,
+  invisible at normal viewing size; chip interiors (color, bevel, gloss, text) are pixel-identical.
+  ```
+- [x] **Always-on `requestAnimationFrame` loop runs regardless of route** — the scroll-easing tick
+  ```
+  in PlayArea.tsx starts on mount and never stops; it's a no-op off Home (proxyRef.current is
+  null) but still schedules a frame forever on every route. Negligible cost, easy cleanup.
+  Fix: gate the effect to `onHome`.
+
+  Fixed: the effect's dependency array changed from `[]` to `[onHome]`, matching the pattern two
+  sibling effects in the same file already use for the identical reason (the `availableHeight`
+  ResizeObserver effect and the rail scroll-listener effect are both already `[onHome]`-gated,
+  since `proxyRef`/`railRef` — which this loop also depends on — only exist while onHome) — this
+  loop was simply never brought in line with that existing convention. Stopping (rather than just
+  no-opping) the loop off Home loses no state: `scrollYRef`/`targetScrollRef` already sat untouched
+  while `proxy` was null, identically whether the loop kept ticking a no-op or was fully stopped: it
+  just resumes from wherever they were once back on Home. Verified live (production build): wheel-
+  scrolling on Home, navigating to `/about` and back via the dock toggle, then wheel-scrolling again
+  — the scroll proxy still eased correctly post-round-trip, no console errors. A `THREE.WebGLRenderer:
+  Context Lost` log noticed during the About→Home transition was confirmed pre-existing (identical
+  on a fully-reverted baseline predating this session's changes) — normal WebGL teardown from
+  TableCanvas unmounting/remounting across the route change, unrelated to this fix.
+  ```
 
 
 

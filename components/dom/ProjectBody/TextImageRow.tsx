@@ -42,7 +42,18 @@ export default function TextImageRow({
       </div>
       {hasMedia && (
         <div className={styles.rowImageContainer}>
-          <Media image={image} video={video} videoPoster={videoPoster} alt={alt} className={styles.rowImage} />
+          <Media
+            image={image}
+            video={video}
+            videoPoster={videoPoster}
+            alt={alt}
+            className={styles.rowImage}
+            // .rowImageContainer is a 50/50 split with .textContainer above
+            // 768px viewport width (100% below), inside a pane capped at
+            // 1400px (lib/layout.ts getReadingPane) minus .section's 40px
+            // side padding — half of that is 660px.
+            sizes="(max-width: 767px) 100vw, (max-width: 1463px) 50vw, 660px"
+          />
         </div>
       )}
     </div>
